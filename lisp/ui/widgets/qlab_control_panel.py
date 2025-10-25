@@ -25,7 +25,8 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QColor
 
-from lisp.ui.ui_utils import translate
+from lisp.ui.ui_utils import translate, css_to_dict, dict_to_css
+from lisp.cues.group_cue import GroupCue
 
 
 class QLabStyleControlPanel(QWidget):
@@ -315,7 +316,7 @@ class QLabStyleControlPanel(QWidget):
             
             print(f"   Loaded timing: FadeIn={cue.fadein_duration}ms, FadeOut={cue.fadeout_duration}ms")
             
-            # Playback - get volume from media element if available
+            # Playback - get volume/loop
             volume_value = 100  # default
             loop_value = 0  # default
             
@@ -337,6 +338,10 @@ class QLabStyleControlPanel(QWidget):
                 print(f"   Loop value from media: {loop_value}")
             else:
                 print(f"   ⚠️ No media attribute or media is None")
+
+            # If GroupCue (no media), use group-level loop property
+            if isinstance(cue, GroupCue):
+                loop_value = getattr(cue, 'loop', 0)
             
             self.volume_slider.setValue(volume_value)
             self.loop_check.setChecked(loop_value != 0)  # Any non-zero = loop enabled
@@ -356,12 +361,13 @@ class QLabStyleControlPanel(QWidget):
             self.osc_check.setChecked(False)
             self.kbd_check.setChecked(False)
             
-            # Color - get from cue stylesheet
-            cue_color = cue.stylesheet if hasattr(cue, 'stylesheet') else '#6496c8'
-            if isinstance(cue_color, str) and cue_color:
-                self._cue_color = QColor(cue_color)
-            else:
-                self._cue_color = QColor(100, 150, 200)
+            # Color - get from cue stylesheet (CSS -> dict)
+            try:
+                css = css_to_dict(getattr(cue, 'stylesheet', '') or '')
+                bg = css.get('background') or '#6496c8'
+            except Exception:
+                bg = '#6496c8'
+            self._cue_color = QColor(bg)
             self.color_btn.setStyleSheet(f"QPushButton {{ background-color: {self._cue_color.name()}; border: 1px solid #333; }}")
             
         finally:
@@ -389,14 +395,22 @@ class QLabStyleControlPanel(QWidget):
         else:
             updates['next_action'] = CueNextAction.DoNothing.value
         
-        # Color - update stylesheet
-        updates['stylesheet'] = self._cue_color.name()
+        # Color - update stylesheet (dict -> CSS string)
+        try:
+            css = css_to_dict(getattr(self._current_cue, 'stylesheet', '') or '')
+        except Exception:
+            css = {}
+        css['background'] = self._cue_color.name()
+        # Ensure readable text if not explicitly set
+        if 'color' not in css:
+            css['color'] = self._auto_contrast_text(self._cue_color)
+        updates['stylesheet'] = dict_to_css(css)
         
         # Media properties (volume, loop) - need special handling
         if hasattr(self._current_cue, 'media') and self._current_cue.media is not None:
             # Get current media element properties
             media_updates = {}
-            
+
             # Volume element updates
             volume_elem = self._current_cue.media.element('Volume')
             if volume_elem is not None:
@@ -406,22 +420,22 @@ class QLabStyleControlPanel(QWidget):
                     'volume': new_volume,
                     'normal_volume': new_volume
                 }
-            
+
             # Loop setting
             if self.loop_check.isChecked():
                 media_updates['loop'] = -1  # Infinite loop
             else:
                 media_updates['loop'] = 0  # No loop
-            
+
             # Store media updates in the media property
             if media_updates:
                 # Get current media properties and update them
                 media_props = self._current_cue.media.properties()
-                
+
                 # Update loop directly
                 if 'loop' in media_updates:
                     media_props['loop'] = media_updates['loop']
-                
+
                 # Update volume element if present
                 if 'Volume' in media_updates:
                     if 'elements' not in media_props:
@@ -429,11 +443,31 @@ class QLabStyleControlPanel(QWidget):
                     if 'Volume' not in media_props['elements']:
                         media_props['elements']['Volume'] = {}
                     media_props['elements']['Volume'].update(media_updates['Volume'])
-                
+
                 updates['media'] = media_props
+        # GroupCue loop handling (no media)
+        elif isinstance(self._current_cue, GroupCue):
+            updates['loop'] = -1 if self.loop_check.isChecked() else 0
         
         return updates
     
     def getCurrentCue(self):
         """Get current cue"""
         return self._current_cue
+
+    # --- helpers ---
+    def _auto_contrast_text(self, qcolor: QColor) -> str:
+        """Return '#000000' or '#ffffff' based on perceived luminance.
+
+        Uses the WCAG relative luminance approximation.
+        """
+        r, g, b, _ = qcolor.getRgb()
+        # Normalize 0..1
+        r /= 255.0
+        g /= 255.0
+        b /= 255.0
+        # Gamma expansion
+        def lin(c):
+            return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+        L = 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b)
+        return '#000000' if L > 0.6 else '#ffffff'

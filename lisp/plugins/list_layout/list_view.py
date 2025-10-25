@@ -40,6 +40,7 @@ from lisp.plugins.list_layout.list_widgets import (
     IndexWidget,
 )
 from lisp.ui.ui_utils import translate, css_to_dict, dict_to_css
+from lisp.cues.group_cue import GroupCue
 
 
 class ListColumn:
@@ -269,8 +270,17 @@ class CueListView(QTreeWidget):
                 css_bg = css.get("background")
                 if css_bg is not None:
                     color = QColor(css_bg)
+                    # Stronger alpha for better visibility
                     color.setAlpha(150)
                     brush = QBrush(color)
+
+                # Highlight Group Cues with a left border accent
+                if isinstance(item.cue, GroupCue):
+                    accent = css_bg or "#4a7a9a"
+                    widget_css["border-left"] = f"4px solid {accent}"
+                    widget_css["border-radius"] = "3px"
+                    # Make group names a bit bolder
+                    widget_css.setdefault("font-weight", "600")
 
             for column in range(self.columnCount()):
                 self.itemWidget(item, column).setStyleSheet(

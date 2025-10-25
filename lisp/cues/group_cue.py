@@ -54,12 +54,15 @@ class GroupCue(Cue):
     # Properties
     children = Property(default=[])  # List of child cue IDs
     mode = Property(default=GroupMode.SIMULTANEOUS.value)  # Execution mode
+    # Loop semantics: 0 = no loop, -1 = infinite loop (match MediaCue convention)
+    loop = Property(default=0)
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = translate("CueName", self.Name)
         self._current_child_index = 0  # For sequential mode
         self._execution_order = []     # Computed execution order
+        self._remaining_loops = 0      # Finite loops counter (runtime only)
         
     def __start__(self, fade=False):
         """Start the group cue based on execution mode"""
@@ -68,6 +71,13 @@ class GroupCue(Cue):
             return False
             
         mode = GroupMode(self.mode)
+        # Initialize loops counter at each explicit start
+        if self.loop == -1:
+            self._remaining_loops = -1
+        elif self.loop > 0:
+            self._remaining_loops = self.loop
+        else:
+            self._remaining_loops = 0
         
         print(f"🎵 GroupCue '{self.name}' starting in {mode.value} mode with {len(self.children)} children")
         
@@ -130,11 +140,21 @@ class GroupCue(Cue):
         """Called when a child cue ends in sequential/random mode"""
         print(f"    ✅ Child ended: {cue.name}")
         
-        # Disconnect from this child
+        # Disconnect from this child outside of the emission loop
         try:
-            cue.end.disconnect(self._on_child_ended)
-        except:
-            pass
+            from PyQt5.QtCore import QTimer
+            def _safe_disconnect(c=cue):
+                try:
+                    c.end.disconnect(self._on_child_ended)
+                except:
+                    pass
+            QTimer.singleShot(0, _safe_disconnect)
+        except Exception:
+            # Fallback to direct disconnect (may warn if during iteration)
+            try:
+                cue.end.disconnect(self._on_child_ended)
+            except:
+                pass
         
         # Move to next child
         self._current_child_index += 1
@@ -149,8 +169,25 @@ class GroupCue(Cue):
                 child_cue.execute(action=CueAction.Start)
         else:
             print(f"  ✅ GroupCue '{self.name}' completed all children")
-            self._execution_order = []
-            self._current_child_index = 0
+            finished_mode = GroupMode(self.mode)
+            # Determine loop behavior: infinite (-1) or finite (>0)
+            if self._remaining_loops == -1 or self._remaining_loops > 1:
+                if self._remaining_loops > 0:
+                    self._remaining_loops -= 1
+                print("  🔁 GroupCue loop — restarting sequence")
+                # Reset state and restart according to current mode (Sequential/Random)
+                self._execution_order = []
+                self._current_child_index = 0
+                if finished_mode == GroupMode.RANDOM:
+                    self._start_random(False)
+                elif finished_mode == GroupMode.SEQUENTIAL:
+                    self._start_sequential(False)
+                else:
+                    # For simultaneous we currently don't auto-loop at end (no aggregate end tracking)
+                    pass
+            else:
+                self._execution_order = []
+                self._current_child_index = 0
     
     def __stop__(self, fade=False):
         """Stop all child cues"""

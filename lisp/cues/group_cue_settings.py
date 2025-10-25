@@ -19,6 +19,7 @@ from PyQt5.QtCore import QT_TRANSLATE_NOOP, Qt
 from PyQt5.QtWidgets import (
     QAbstractItemView,
     QButtonGroup,
+    QCheckBox,
     QDialog,
     QDialogButtonBox,
     QGroupBox,
@@ -29,6 +30,7 @@ from PyQt5.QtWidgets import (
     QListWidgetItem,
     QPushButton,
     QRadioButton,
+    QSpinBox,
     QSizePolicy,
     QVBoxLayout,
 )
@@ -81,6 +83,34 @@ class GroupCueSettings(SettingsPage):
         
         # Default to simultaneous
         self.simultaneousRadio.setChecked(True)
+        
+        # Loop Group
+        self.loopGroup = QGroupBox(self)
+        self.loopGroup.setTitle(translate("GroupCue", "Loop"))
+        self.loopGroup.setLayout(QHBoxLayout())
+        self.layout().addWidget(self.loopGroup)
+        
+        self.loopCheck = QCheckBox(translate("GroupCue", "Enable loop"), self.loopGroup)
+        self.loopGroup.layout().addWidget(self.loopCheck)
+        
+        self.loopGroup.layout().addSpacing(12)
+        
+        self.loopCountLabel = QLabel(translate("GroupCue", "Repetitions (0=∞):"), self.loopGroup)
+        self.loopGroup.layout().addWidget(self.loopCountLabel)
+        
+        self.loopCountSpin = QSpinBox(self.loopGroup)
+        self.loopCountSpin.setRange(0, 999)
+        self.loopCountSpin.setValue(0)
+        self.loopGroup.layout().addWidget(self.loopCountSpin)
+        
+        self.loopGroup.layout().addStretch()
+        
+        # Enable/disable spin based on checkbox
+        def _toggle_loop_inputs(checked):
+            self.loopCountLabel.setEnabled(checked)
+            self.loopCountSpin.setEnabled(checked)
+        self.loopCheck.toggled.connect(_toggle_loop_inputs)
+        _toggle_loop_inputs(False)
         
         # Children Management Group
         self.childrenGroup = QGroupBox(self)
@@ -203,6 +233,7 @@ class GroupCueSettings(SettingsPage):
     def enableCheck(self, enabled):
         """Enable/disable the settings page"""
         self.setGroupEnabled(self.modeGroup, enabled)
+        self.setGroupEnabled(self.loopGroup, enabled)
         self.setGroupEnabled(self.childrenGroup, enabled)
     
     def loadSettings(self, settings):
@@ -215,6 +246,18 @@ class GroupCueSettings(SettingsPage):
             self.sequentialRadio.setChecked(True)
         elif mode == GroupMode.RANDOM.value:
             self.randomRadio.setChecked(True)
+        
+        # Load loop
+        loop = settings.get("loop", 0)
+        if loop == 0:
+            self.loopCheck.setChecked(False)
+            self.loopCountSpin.setValue(1)
+        elif loop == -1:
+            self.loopCheck.setChecked(True)
+            self.loopCountSpin.setValue(0)
+        else:
+            self.loopCheck.setChecked(True)
+            self.loopCountSpin.setValue(int(loop))
         
         # Load children
         self.childrenList.clear()
@@ -240,16 +283,24 @@ class GroupCueSettings(SettingsPage):
         else:
             mode = GroupMode.RANDOM.value
         
+        # Get loop
+        if self.loopCheck.isChecked():
+            count = self.loopCountSpin.value()
+            loop = -1 if count == 0 else int(count)
+        else:
+            loop = 0
+        
         # Get children IDs
         children = []
         for i in range(self.childrenList.count()):
             item = self.childrenList.item(i)
             children.append(item.data(Qt.UserRole))
         
-        print(f"💾 GroupCue settings: mode={mode}, children={len(children)}")
+        print(f"💾 GroupCue settings: mode={mode}, loop={loop}, children={len(children)}")
         
         return {
             "mode": mode,
+            "loop": loop,
             "children": children
         }
 

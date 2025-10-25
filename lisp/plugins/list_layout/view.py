@@ -22,6 +22,8 @@ from lisp.plugins.list_layout.list_view import CueListView
 from lisp.plugins.list_layout.playing_view import RunningCuesListWidget
 from lisp.ui.widgets.dynamicfontsize import DynamicFontSizePushButton
 from lisp.ui.widgets.qlab_control_panel import QLabStyleControlPanel
+from lisp.ui.ui_utils import css_to_dict, dict_to_css
+from lisp.cues.group_cue import GroupCue
 from lisp.command.cue import UpdateCueCommand
 from lisp.application import Application
 from .control_buttons import ShowControlButtons
@@ -111,7 +113,7 @@ class ListLayoutView(QWidget):
         self.mainSplitter.addWidget(self.topSplitter)
         self.mainSplitter.addWidget(self.centralSplitter)
 
-        # QLAB CONTROL PANEL (bottom) - MUST BE VISIBLE!
+        # CONTROL PANEL (bottom) - MUST BE VISIBLE!
         self.controlPanel = QLabStyleControlPanel(self)
         self.controlPanel.setMinimumHeight(280)
         self.controlPanel.setMaximumHeight(400)
@@ -122,7 +124,7 @@ class ListLayoutView(QWidget):
         # Use reasonable defaults: 100px top, 400px center, 300px panel
         self.mainSplitter.setSizes([100, 400, 300])
         
-        print("✅ QLab Control Panel added to layout!")
+        print("✅ Control Panel added to layout!")
         
         # Connect control panel signals (Apply button removed - now auto-apply)
         self.controlPanel.edit_full_btn.clicked.connect(self.__openFullSettings)
@@ -234,8 +236,16 @@ class ListLayoutView(QWidget):
             else:
                 cue.next_action = CueNextAction.DoNothing.value
             
-            # Apply color
-            cue.stylesheet = self.controlPanel._cue_color.name()
+            # Apply color: merge into CSS stylesheet
+            try:
+                css = css_to_dict(getattr(cue, 'stylesheet', '') or '')
+            except Exception:
+                css = {}
+            css['background'] = self.controlPanel._cue_color.name()
+            # If text color not set, compute a contrasting one
+            if 'color' not in css:
+                css['color'] = self.__contrast_text(self.controlPanel._cue_color.name())
+            cue.stylesheet = dict_to_css(css)
             
             # Apply media properties (volume, loop) if this is a MediaCue
             if hasattr(cue, 'media') and cue.media is not None:
@@ -263,6 +273,9 @@ class ListLayoutView(QWidget):
                     print(f"   Set loop to: 0 (no loop)")
             else:
                 print(f"   ⚠️ Not a media cue or media is None")
+                # GroupCue: apply loop flag
+                if isinstance(cue, GroupCue):
+                    cue.loop = -1 if self.controlPanel.loop_check.isChecked() else 0
             
             print(f"✅ Applied changes to cue: {cue.name}")
             
@@ -292,3 +305,18 @@ class ListLayoutView(QWidget):
         
         # Reload control panel after editing
         self.controlPanel.setCue(cue)
+
+    # --- helpers ---
+    def __contrast_text(self, hex_color: str) -> str:
+        # hex_color like '#rrggbb'
+        try:
+            h = hex_color.lstrip('#')
+            r = int(h[0:2], 16) / 255.0
+            g = int(h[2:4], 16) / 255.0
+            b = int(h[4:6], 16) / 255.0
+            def lin(c):
+                return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+            L = 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b)
+            return '#000000' if L > 0.6 else '#ffffff'
+        except Exception:
+            return '#ffffff'

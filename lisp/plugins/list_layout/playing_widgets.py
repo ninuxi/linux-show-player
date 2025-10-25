@@ -36,6 +36,7 @@ from lisp.plugins.list_layout.control_buttons import CueControlButtons
 from lisp.ui.widgets import QClickSlider
 from lisp.ui.widgets.elidedlabel import ElidedLabel
 from lisp.ui.widgets.waveform import WaveformSlider
+from lisp.ui.ui_utils import css_to_dict
 
 
 def get_running_widget(cue, config, **kwargs):
@@ -104,8 +105,51 @@ class RunningCueWidget(QWidget):
         elif cue.is_fading_out():
             QTimer.singleShot(0, self.enter_fadeout)
 
+        # Apply cue stylesheet color to the running widget
+        self._apply_stylesheet()
+        cue.changed("stylesheet").connect(self._on_stylesheet_changed, Connection.QtQueued)
+
     def updateSize(self, width):
         self.resize(width, int(width / 3.75))
+
+    # --- color helpers ---
+    def _on_stylesheet_changed(self, _value):
+        self._apply_stylesheet()
+
+    def _apply_stylesheet(self):
+        try:
+            css = css_to_dict(getattr(self.cue, 'stylesheet', '') or '')
+        except Exception:
+            css = {}
+        bg = css.get('background')
+        fg = css.get('color')
+
+        # Subtle background with border accent using cue color
+        if bg:
+            rgba = self._rgba_with_alpha(bg, 140)
+            accent = bg
+            self.gridLayoutWidget.setStyleSheet(
+                f"QWidget {{ background-color: {rgba}; border-left: 4px solid {accent}; border-radius: 4px; }}"
+            )
+        else:
+            self.gridLayoutWidget.setStyleSheet("")
+
+        if fg:
+            self.nameLabel.setStyleSheet(f"color: {fg}; font-weight: 600;")
+        else:
+            self.nameLabel.setStyleSheet("")
+
+    def _rgba_with_alpha(self, hex_color: str, alpha: int) -> str:
+        # hex '#rrggbb' to 'rgba(r,g,b,a)'
+        try:
+            h = hex_color.lstrip('#')
+            r = int(h[0:2], 16)
+            g = int(h[2:4], 16)
+            b = int(h[4:6], 16)
+            a = max(0, min(255, alpha))
+            return f"rgba({r}, {g}, {b}, {a})"
+        except Exception:
+            return "rgba(0,0,0,0)"
 
     def setup_control_buttons(self):
         if CueAction.Stop in self.cue.CueActions:
