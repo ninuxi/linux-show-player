@@ -21,7 +21,7 @@ from PyQt5.QtWidgets import QWidget, QSizePolicy, QSplitter, QVBoxLayout
 from lisp.plugins.list_layout.list_view import CueListView
 from lisp.plugins.list_layout.playing_view import RunningCuesListWidget
 from lisp.ui.widgets.dynamicfontsize import DynamicFontSizePushButton
-from lisp.ui.widgets.qlab_control_panel import QLabStyleControlPanel
+from lisp.ui.widgets.cue_control_panel import CueControlPanel
 from lisp.command.cue import UpdateCueCommand
 from lisp.application import Application
 from .control_buttons import ShowControlButtons
@@ -112,7 +112,7 @@ class ListLayoutView(QWidget):
         self.mainSplitter.addWidget(self.centralSplitter)
 
         # QLAB CONTROL PANEL (bottom) - MUST BE VISIBLE!
-        self.controlPanel = QLabStyleControlPanel(self)
+        self.controlPanel = CueControlPanel(self)
         self.controlPanel.setMinimumHeight(280)
         self.controlPanel.setMaximumHeight(400)
         self.mainSplitter.addWidget(self.controlPanel)
@@ -122,7 +122,7 @@ class ListLayoutView(QWidget):
         # Use reasonable defaults: 100px top, 400px center, 300px panel
         self.mainSplitter.setSizes([100, 400, 300])
         
-        print("✅ QLab Control Panel added to layout!")
+        print("✅ Control Panel added to layout!")
         
         # Connect control panel signals (Apply button removed - now auto-apply)
         self.controlPanel.edit_full_btn.clicked.connect(self.__openFullSettings)

@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
-"""QLab-style compact control panel for cues"""
+"""Compact control panel for cues"""
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
@@ -28,8 +28,8 @@ from PyQt5.QtGui import QColor
 from lisp.ui.ui_utils import translate
 
 
-class QLabStyleControlPanel(QWidget):
-    """Compact control panel at bottom like QLab"""
+class CueControlPanel(QWidget):
+    """Compact control panel at bottom """
     
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -41,11 +41,11 @@ class QLabStyleControlPanel(QWidget):
         
         # Make it VERY visible with background color
         self.setStyleSheet("""
-            QLabStyleControlPanel {
+            CueControlPanel {
                 background-color: #2a2a35;
                 border-top: 3px solid #4a5a8f;
             }
-            QLabStyleControlPanel, QLabStyleControlPanel * {
+            CueControlPanel, CueControlPanel * {
                 color: #e8eaf1;
                 font-size: 12px;
             }
