@@ -21,6 +21,9 @@ from PyQt5.QtWidgets import QWidget, QSizePolicy, QSplitter, QVBoxLayout
 from lisp.plugins.list_layout.list_view import CueListView
 from lisp.plugins.list_layout.playing_view import RunningCuesListWidget
 from lisp.ui.widgets.dynamicfontsize import DynamicFontSizePushButton
+from lisp.ui.widgets.qlab_control_panel import QLabStyleControlPanel
+from lisp.command.cue import UpdateCueCommand
+from lisp.application import Application
 from .control_buttons import ShowControlButtons
 from .info_panel import InfoPanel
 
@@ -36,11 +39,8 @@ class ListLayoutView(QWidget):
         self.mainSplitter = QSplitter(Qt.Vertical, self)
         self.layout().addWidget(self.mainSplitter)
 
-        self.topSplitter = QSplitter(self.mainSplitter)
-        self.mainSplitter.addWidget(self.topSplitter)
-
-        self.centralSplitter = QSplitter(self.topSplitter)
-        self.mainSplitter.addWidget(self.centralSplitter)
+        self.topSplitter = QSplitter(Qt.Horizontal, self)
+        self.centralSplitter = QSplitter(Qt.Horizontal, self)
 
         # GO-BUTTON (top-left)
         self.goButton = DynamicFontSizePushButton(parent=self)
@@ -49,6 +49,30 @@ class ListLayoutView(QWidget):
         self.goButton.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         self.goButton.setFocusPolicy(Qt.NoFocus)
         self.topSplitter.addWidget(self.goButton)
+        
+        # CREATE GROUP BUTTON (top-left-2)
+        self.createGroupButton = DynamicFontSizePushButton(parent=self)
+        self.createGroupButton.setText("+ Group")
+        self.createGroupButton.setMinimumWidth(80)
+        self.createGroupButton.setMaximumWidth(120)
+        self.createGroupButton.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+        self.createGroupButton.setFocusPolicy(Qt.NoFocus)
+        self.createGroupButton.setStyleSheet("""
+            QPushButton {
+                background-color: #2a5a3a;
+                border: 2px solid #3a7a4a;
+                color: #e8fff0;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #3a7a4a;
+                border: 2px solid #4a9a5a;
+            }
+            QPushButton:pressed {
+                background-color: #1a4a2a;
+            }
+        """)
+        self.topSplitter.addWidget(self.createGroupButton)
 
         # INFO PANEL (top-center)
         self.infoPanel = InfoPanel(self)
@@ -82,6 +106,26 @@ class ListLayoutView(QWidget):
         self.runView.setMinimumWidth(200)
         self.runView.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         self.centralSplitter.addWidget(self.runView)
+        
+        # Add top and central to main splitter
+        self.mainSplitter.addWidget(self.topSplitter)
+        self.mainSplitter.addWidget(self.centralSplitter)
+
+        # QLAB CONTROL PANEL (bottom) - MUST BE VISIBLE!
+        self.controlPanel = QLabStyleControlPanel(self)
+        self.controlPanel.setMinimumHeight(280)
+        self.controlPanel.setMaximumHeight(400)
+        self.mainSplitter.addWidget(self.controlPanel)
+        self.mainSplitter.setCollapsible(2, False)  # Panel cannot be collapsed
+        
+        # Set initial splitter sizes explicitly (before showEvent)
+        # Use reasonable defaults: 100px top, 400px center, 300px panel
+        self.mainSplitter.setSizes([100, 400, 300])
+        
+        print("✅ QLab Control Panel added to layout!")
+        
+        # Connect control panel signals (Apply button removed - now auto-apply)
+        self.controlPanel.edit_full_btn.clicked.connect(self.__openFullSettings)
 
         self.__userResized = False
 
@@ -91,17 +135,33 @@ class ListLayoutView(QWidget):
             self.resetSize()
 
     def resetSize(self):
-        self.mainSplitter.setSizes(
-            (int(0.22 * self.width()), int(0.78 * self.width()))
-        )
+        # Main splitter has 3 widgets: topSplitter, centralSplitter, controlPanel
+        # Give most space to central, some to top, fixed to control panel
+        total_height = self.height()
+        
+        # Ensure we have a reasonable height (at least 500px)
+        if total_height < 500:
+            total_height = 600
+            
+        panel_height = 300  # Larger panel to show all controls without scrolling
+        top_height = max(80, int(0.15 * total_height))  # At least 80px for top bar
+        center_height = total_height - top_height - panel_height  # Rest for cue list
+        
+        # Ensure center gets some space
+        if center_height < 200:
+            center_height = 200
+        
+        self.mainSplitter.setSizes([top_height, center_height, panel_height])
+        
         self.centralSplitter.setSizes(
             (int(0.78 * self.width()), int(0.22 * self.width()))
         )
         self.topSplitter.setSizes(
             (
-                int(0.11 * self.width()),
-                int(0.67 * self.width()),
-                int(0.22 * self.width()),
+                int(0.08 * self.width()),  # GO button (reduced)
+                int(0.10 * self.width()),  # Group button (new)
+                int(0.60 * self.width()),  # Info panel (reduced)
+                int(0.22 * self.width()),  # Control buttons
             )
         )
 
@@ -137,3 +197,98 @@ class ListLayoutView(QWidget):
                 cue = self.listModel.item(index)
 
         self.infoPanel.cue = cue
+        
+        # Update control panel with selected cue
+        print(f"🔵 Loading cue into panel: {cue.name if cue else 'None'}")
+        self.controlPanel.setCue(cue)
+    
+    def __applyControlPanelChanges(self):
+        """Apply changes from control panel to cue"""
+        cue = self.controlPanel.getCurrentCue()
+        print(f"🟡 Apply button pressed. Current cue: {cue.name if cue else 'None'}")
+        
+        if cue is None:
+            print("❌ No cue to apply changes to")
+            return
+        
+        try:
+            # Get timing updates from panel (returns seconds as floats)
+            fade_in = self.controlPanel.fade_in_spin.value()
+            fade_out = self.controlPanel.fade_out_spin.value()
+            pre_wait = self.controlPanel.pre_wait_spin.value()
+            post_wait = self.controlPanel.post_wait_spin.value()
+            
+            print(f"   Fade In: {fade_in}s, Fade Out: {fade_out}s")
+            print(f"   Pre-Wait: {pre_wait}s, Post-Wait: {post_wait}s")
+            
+            # Apply timing (convert seconds to milliseconds)
+            cue.fadein_duration = int(fade_in * 1000)
+            cue.fadeout_duration = int(fade_out * 1000)
+            cue.pre_wait = int(pre_wait * 1000)
+            cue.post_wait = int(post_wait * 1000)
+            
+            # Apply auto-follow
+            from lisp.cues.cue import CueNextAction
+            if self.controlPanel.auto_follow_check.isChecked():
+                cue.next_action = CueNextAction.TriggerAfterEnd.value
+            else:
+                cue.next_action = CueNextAction.DoNothing.value
+            
+            # Apply color
+            cue.stylesheet = self.controlPanel._cue_color.name()
+            
+            # Apply media properties (volume, loop) if this is a MediaCue
+            if hasattr(cue, 'media') and cue.media is not None:
+                print(f"   Media cue detected, updating volume and loop...")
+                
+                # Update volume
+                volume_elem = cue.media.element('Volume')
+                if volume_elem is not None:
+                    # Convert from 0-200% to 0.0-10.0 range
+                    new_volume = self.controlPanel.volume_slider.value() / 100.0
+                    print(f"   Volume: {self.controlPanel.volume_slider.value()}% -> {new_volume}")
+                    volume_elem.volume = new_volume
+                    volume_elem.normal_volume = new_volume
+                else:
+                    print("   ⚠️ No Volume element found in media")
+                
+                # Update loop
+                loop_checked = self.controlPanel.loop_check.isChecked()
+                print(f"   Loop checkbox: {loop_checked}")
+                if loop_checked:
+                    cue.media.loop = -1  # Infinite loop
+                    print(f"   Set loop to: -1 (infinite)")
+                else:
+                    cue.media.loop = 0  # No loop
+                    print(f"   Set loop to: 0 (no loop)")
+            else:
+                print(f"   ⚠️ Not a media cue or media is None")
+            
+            print(f"✅ Applied changes to cue: {cue.name}")
+            
+        except Exception as e:
+            print(f"❌ Error applying changes: {e}")
+            import traceback
+            traceback.print_exc()
+    
+    def __openFullSettings(self):
+        """Open full settings dialog"""
+        cue = self.controlPanel.getCurrentCue()
+        if cue is None:
+            return
+        
+        # Emit signal to parent layout to open settings
+        # The layout will handle opening the CueSettingsDialog
+        from lisp.ui.settings.cue_settings import CueSettingsDialog
+        
+        dialog = CueSettingsDialog(cue, parent=self)
+        
+        def on_apply(settings):
+            app = Application()
+            app.commands_stack.do(UpdateCueCommand(settings, cue))
+        
+        dialog.onApply.connect(on_apply)
+        dialog.exec()
+        
+        # Reload control panel after editing
+        self.controlPanel.setCue(cue)

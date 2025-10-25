@@ -43,6 +43,8 @@ class ListLayout(CueLayout):
         "LayoutDescription", "Organize the cues in a list"
     )
     DETAILS = [
+        QT_TRANSLATE_NOOP("LayoutDetails", "SPACE to GO (start standby cue)"),
+        QT_TRANSLATE_NOOP("LayoutDetails", "ESC to STOP ALL (panic)"),
         QT_TRANSLATE_NOOP(
             "LayoutDetails", "SHIFT + Space or Double-Click to edit a cue"
         ),
@@ -76,6 +78,8 @@ class ListLayout(CueLayout):
         self._view.setResizeHandlesEnabled(False)
         # GO button
         self._view.goButton.clicked.connect(self.__go_slot)
+        # Create Group button
+        self._view.createGroupButton.clicked.connect(self.__create_group_cue)
         # Global actions
         self._view.controlButtons.stopButton.clicked.connect(self.stop_all)
         self._view.controlButtons.pauseButton.clicked.connect(self.pause_all)
@@ -278,7 +282,23 @@ class ListLayout(CueLayout):
             goSequence = QKeySequence(
                 ListLayout.Config["goKey"], QKeySequence.NativeText
             )
-            if sequence in goSequence:
+            
+            # SPACE: GO (start standby cue)
+            if event.key() == Qt.Key_Space and event.modifiers() == Qt.NoModifier:
+                event.accept()
+                if not (
+                    self.go_key_disabled_while_playing
+                    and len(self._running_model)
+                ):
+                    print("⏯️ SPACE pressed - GO!")
+                    self.__go_slot()
+            # ESC: PANIC/STOP ALL (like QLab)
+            elif event.key() == Qt.Key_Escape and event.modifiers() == Qt.NoModifier:
+                event.accept()
+                print("🚨 ESC pressed - STOP ALL (panic)!")
+                self.stop_all()
+            # Configured GO key (backward compatibility)
+            elif sequence in goSequence:
                 event.accept()
                 if not (
                     self.go_key_disabled_while_playing
@@ -422,6 +442,32 @@ class ListLayout(CueLayout):
 
             self._go_timer.setInterval(ListLayout.Config.get("goDelay"))
             self._go_timer.start()
+    
+    def __create_group_cue(self):
+        """Create a new Group Cue and add it to the list"""
+        try:
+            # Import GroupCue here to avoid circular imports
+            from lisp.cues.group_cue import GroupCue
+            
+            # Create a new GroupCue
+            group_cue = self.app.cue_factory.create_cue(GroupCue.__name__)
+            group_cue.name = translate("ListLayout", "New Group")
+            
+            # Add it to the model at the end
+            position = len(self._list_model)
+            self.app.commands_stack.do(
+                ModelInsertItemsCommand(self.model, position, group_cue)
+            )
+            
+            print(f"✅ Created new Group Cue at position {position}")
+            
+            # Optionally, open the settings dialog immediately
+            self.edit_cue(group_cue)
+            
+        except Exception as e:
+            print(f"❌ Error creating Group Cue: {e}")
+            import traceback
+            traceback.print_exc()
 
     def __cue_added(self, cue):
         cue.next.connect(self.__cue_next, Connection.QtQueued)
