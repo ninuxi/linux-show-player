@@ -21,7 +21,7 @@ from PyQt5.QtWidgets import QWidget, QSizePolicy, QSplitter, QVBoxLayout
 from lisp.plugins.list_layout.list_view import CueListView
 from lisp.plugins.list_layout.playing_view import RunningCuesListWidget
 from lisp.ui.widgets.dynamicfontsize import DynamicFontSizePushButton
-from lisp.ui.widgets.qlab_control_panel import QLabStyleControlPanel
+from lisp.ui.widgets.cue_control_panel import CueControlPanel
 from lisp.ui.ui_utils import css_to_dict, dict_to_css
 from lisp.cues.group_cue import GroupCue
 from lisp.command.cue import UpdateCueCommand
@@ -114,7 +114,7 @@ class ListLayoutView(QWidget):
         self.mainSplitter.addWidget(self.centralSplitter)
 
         # CONTROL PANEL (bottom) - MUST BE VISIBLE!
-        self.controlPanel = QLabStyleControlPanel(self)
+        self.controlPanel = CueControlPanel(self)
         self.controlPanel.setMinimumHeight(280)
         self.controlPanel.setMaximumHeight(400)
         self.mainSplitter.addWidget(self.controlPanel)

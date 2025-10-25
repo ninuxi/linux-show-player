@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
-"""QLab-style compact control panel for cues"""
+"""Compact control panel for cues"""
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
@@ -29,8 +29,8 @@ from lisp.ui.ui_utils import translate, css_to_dict, dict_to_css
 from lisp.cues.group_cue import GroupCue
 
 
-class QLabStyleControlPanel(QWidget):
-    """Compact control panel at bottom like QLab"""
+class CueControlPanel(QWidget):
+    """Compact control panel at bottom"""
     
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -40,13 +40,14 @@ class QLabStyleControlPanel(QWidget):
         self.setMinimumHeight(280)
         self.setMaximumHeight(400)
         
-        # Make it VERY visible with background color
-        self.setStyleSheet("""
-            QLabStyleControlPanel {
+        # Make it visible with background color
+        self.setStyleSheet(
+            """
+            CueControlPanel {
                 background-color: #2a2a35;
                 border-top: 3px solid #4a5a8f;
             }
-            QLabStyleControlPanel, QLabStyleControlPanel * {
+            CueControlPanel, CueControlPanel * {
                 color: #e8eaf1;
                 font-size: 12px;
             }
@@ -65,7 +66,8 @@ class QLabStyleControlPanel(QWidget):
             QCheckBox { spacing: 6px; }
             QPushButton { background-color: #30354b; border: 1px solid #5965a8; border-radius: 4px; padding: 4px 8px; }
             QPushButton:hover { background-color: #3a4060; }
-        """)
+            """
+        )
         
     def _setup_ui(self):
         """Setup compact UI with improved readability"""
