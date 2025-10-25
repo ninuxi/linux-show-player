@@ -1,0 +1,67 @@
+[build-system]
+requires = ["poetry-core>=1.1.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "linux-show-player"
+version = "0.6.5"
+description = "Cue player for stage productions"
+authors = ["Francesco Ceruti <ceppofrancy@gmail.com>"]
+license = "GPLv3"
+readme = "README.md"
+
+homepage = "https://www.linux-show-player.org/"
+repository = "https://github.com/FrancescoCeruti/linux-show-player"
+
+packages = [
+    { include = "lisp" }
+]
+exclude = [
+    "lisp/i18n/ts/",
+    "lisp/ui/themes/*/assets/"
+]
+
+[tool.poetry.dependencies]
+python = ">= 3.9, < 4.0"
+appdirs = "^1.4.1"
+falcon = "^4.0.1"
+jack-client = "^0.5"
+mido = "^1.3.3"
+pygobject = "^3.30"
+pyqt5 = "^5.15.2"
+pyqt5-qt5 = "^5.15.2"
+python-rtmidi = "^1.1"
+requests = "^2.20"
+sortedcontainers = "^2.0"
+humanize = "^4.8.0"
+numpy = ">= 1.26.4, < 3.0.0"
+pyalsa = { git = "https://github.com/alsa-project/alsa-python.git", rev="f8f9260282eb9c97f53e4689e04182dc87a4810e" }
+# Use a pyliblo fork that define dependecies correctly
+pyliblo3 = { git = "https://github.com/FrancescoCeruti/pyliblo3", rev = "9b66f93bc058807fdbe27f9255b18b0df8e60e32" }
+qdigitalmeter = "^0.1.0"
+
+[tool.poetry.group.docs]
+optional = true
+
+[tool.poetry.group.docs.dependencies]
+Sphinx = "^7.1"
+furo = "^2023.07.26"
+myst-parser = "^2.0.0"
+sphinx-autobuild = "^2021.3.14"
+sphinx-inline-tabs = "^2023.4.21"
+
+[tool.poetry.group.dev.dependencies]
+toml = "*"
+packaging = "*"
+pygobject-stubs = "^2.11.0"
+ruff = "^0.6.9"
+
+[tool.poetry.scripts]
+linux-show-player = "lisp.main:main"
+
+[tool.ruff]
+line-length = 80
+target-version = 'py39'
+
+[tool.ruff.lint]
+ignore = ["F401", "E402"]
