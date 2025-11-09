@@ -1,0 +1,205 @@
+{
+    "app-id": "org.linuxshowplayer.LinuxShowPlayer",
+    "runtime": "org.kde.Platform",
+    "runtime-version": "5.15-23.08",
+    "sdk": "org.kde.Sdk",
+    "base": "com.riverbankcomputing.PyQt.BaseApp",
+    "base-version": "5.15-23.08",
+    "command": "linux-show-player",
+    "rename-icon": "linuxshowplayer",
+    "finish-args": [
+        "--share=network",
+        "--share=ipc",
+        "--socket=wayland",
+        "--socket=fallback-x11",
+        "--socket=pulseaudio",
+        "--filesystem=xdg-run/pipewire-0",
+        "--filesystem=home",
+        "--device=all",
+        "--talk-name=org.freedesktop.Flatpak"
+    ],
+    "cleanup-commands": [
+        "/app/cleanup-BaseApp.sh"
+    ],
+    "cleanup": [
+        "*.la",
+        "*.a",
+        "/include",
+        "/lib/pkgconfig",
+        "/share/man"
+    ],
+    "build-options": {
+        "env": [
+            "BASEAPP_REMOVE_WEBENGINE=1"
+        ]
+    },
+    "modules": [
+        {
+            "name": "RtMidi",
+            "config-opts": [
+                "--with-jack",
+                "--with-alsa"
+            ],
+            "sources": [
+                {
+                    "type": "git",
+                    "url": "https://github.com/thestk/rtmidi.git",
+                    "tag": "6.0.0",
+                    "commit": "1e5b49925aa60065db52de44c366d446a902547b"
+                }
+            ]
+        },
+        {
+            "name": "python-rtmidi",
+            "buildsystem": "meson",
+            "sources": [
+                {
+                    "type": "archive",
+                    "url": "https://files.pythonhosted.org/packages/dd/ee/0f91965dcc471714c69df21e5ca3d94dc81411b7dee2d31ff1184bea07c9/python_rtmidi-1.5.8.tar.gz",
+                    "sha256": "7f9ade68b068ae09000ecb562ae9521da3a234361ad5449e83fc734544d004fa"
+                }
+            ]
+        },
+        "shared-modules/linux-audio/liblo.json",
+        {
+            "name": "pyliblo3",
+            "buildsystem": "simple",
+            "build-commands": [
+                "pip3 install --no-index --no-build-isolation --find-links=\"file://${PWD}\" --prefix=\"${FLATPAK_DEST}\" pyliblo3"
+            ],
+            "sources": [
+                {
+                    "type": "file",
+                    "url": "https://files.pythonhosted.org/packages/5e/2e/524a6667fa851d0aae3eded349b4f1e56785036d65e186fb4bf2f741a505/pyliblo3-0.13.0.tar.gz",
+                    "sha256": "5700eac4a6db2c1c492a99c17bbf1871e888309ae7bcd1c68473650778d60f46"
+                }
+            ]
+        },
+        {
+            "name": "protobuf",
+            "config-opts": [
+                "--disable-static"
+            ],
+            "sources": [
+                {
+                    "type": "archive",
+                    "url": "https://github.com/protocolbuffers/protobuf/releases/download/v21.12/protobuf-cpp-3.21.12.tar.gz",
+                    "sha256": "4eab9b524aa5913c6fffb20b2a8abf5ef7f95a80bc0701f3a6dbb4c607f73460"
+                }
+            ],
+            "cleanup": [
+                "/bin"
+            ]
+        },
+        {
+            "name": "python-google-protobuf",
+            "buildsystem": "simple",
+            "build-commands": [
+                "pip3 install --no-index --no-build-isolation --find-links=\"file://${PWD}\" --prefix=\"${FLATPAK_DEST}\" protobuf"
+            ],
+            "sources": [
+                {
+                    "type": "file",
+                    "url": "https://files.pythonhosted.org/packages/ba/dd/f8a01b146bf45ac12a829bbc599e6590aa6a6849ace7d28c42d77041d6ab/protobuf-4.21.12.tar.gz",
+                    "sha256": "7cd532c4566d0e6feafecc1059d04c7915aec8e182d1cf7adee8b24ef1e2e6ab"
+                }
+            ]
+        },
+        {
+            "name": "ola",
+            "build-options": {
+                "env": {
+                    "PYTHON": "python3"
+                }
+            },
+            "config-opts": [
+                "--disable-unittests",
+                "--disable-examples",
+                "--disable-osc",
+                "--disable-http",
+                "--enable-python-libs"
+            ],
+            "sources": [
+                {
+                    "type": "archive",
+                    "url": "https://github.com/OpenLightingProject/ola/releases/download/0.10.9/ola-0.10.9.tar.gz",
+                    "sha256": "44073698c147fe641507398253c2e52ff8dc7eac8606cbf286c29f37939a4ebf"
+                },
+                {
+                    "type": "script",
+                    "dest-filename": "autogen.sh",
+                    "commands": [
+                        "autoreconf -fi"
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "python-alsa",
+            "buildsystem": "simple",
+            "build-commands": [
+                "pip3 install --no-index --no-build-isolation --prefix=\"${FLATPAK_DEST}\" ."
+            ],
+            "sources": [
+                {
+                    "type": "archive",
+                    "url": "https://www.alsa-project.org/files/pub/pyalsa/pyalsa-1.2.12.tar.bz2",
+                    "sha256": "8abeaf41e5f48f617a52d1078932da89ab303d4a1d8f9919f947bdb1b7d03f50"
+                }
+            ]
+        },
+        {
+            "name": "poetry-core",
+            "buildsystem": "simple",
+            "build-commands": [
+                "pip3 install --no-index --no-build-isolation --find-links=\"file://${PWD}\" --prefix=\"${FLATPAK_DEST}\" poetry-core"
+            ],
+            "cleanup": [
+                "*"
+            ],
+            "sources": [
+                {
+                    "type": "file",
+                    "url": "https://files.pythonhosted.org/packages/ce/a3/f1fd35e3863b50713642d8745ba28e12e7cb8a6a28beab064ff1e8455db4/poetry_core-2.1.2-py3-none-any.whl",
+                    "sha256": "ecb1e8f7d4f071a21cd0feb8c19bd1aec80de6fb0e82aa9d809a591e544431b4"
+                }
+            ]
+        },
+        {
+            "name": "python-packaging",
+            "buildsystem": "simple",
+            "build-commands": [
+                "pip3 install --no-index --no-build-isolation --force-reinstall --find-links=\"file://${PWD}\" --prefix=\"${FLATPAK_DEST}\" packaging"
+            ],
+            "sources": [
+                {
+                    "type": "file",
+                    "url": "https://files.pythonhosted.org/packages/ec/1a/610693ac4ee14fcdf2d9bf3c493370e4f2ef7ae2e19217d7a237ff42367d/packaging-23.2-py3-none-any.whl",
+                    "sha256": "8c491190033a9af7e1d931d0b5dacc2ef47509b34dd0de67ed209b5203fc88c7"
+                }
+            ]
+        },
+        "gstreamer-modules.json",
+        "pygobject-modules.json",
+        "python-modules.json",
+        "numpy-modules.json",
+        {
+            "name": "linux-show-player",
+            "buildsystem": "simple",
+            "build-commands": [
+                "pip3 install --no-deps --no-build-isolation --prefix=\"${FLATPAK_DEST}\" .",
+                "install -Dm644 dist/linuxshowplayer.desktop ${FLATPAK_DEST}/share/applications/${FLATPAK_ID}.desktop",
+                "install -Dm644 dist/linuxshowplayer.xml /app/share/mime/packages/${FLATPAK_ID}.xml",
+                "install -Dm644 dist/linuxshowplayer.metainfo.xml /app/share/metainfo/${FLATPAK_ID}.metainfo.xml",
+                "install -Dm644 dist/linuxshowplayer.png /app/share/icons/hicolor/512x512/apps/linuxshowplayer.png"
+            ],
+            "sources": [
+                {
+                    "type": "git",
+                    "url": "https://github.com/FrancescoCeruti/linux-show-player.git",
+                    "branch": "master"
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,11 @@
+"""Utility module for importing and checking gi.repository packages once"""
+
+import gi
+
+gi.require_version("Gst", "1.0")
+gi.require_version("GstController", "1.0")
+gi.require_version("GstPbutils", "1.0")
+gi.require_version("GstApp", "1.0")
+
+# noinspection PyUnresolvedReferences
+from gi.repository import GObject, GLib, Gst, GstController, GstPbutils, GstApp

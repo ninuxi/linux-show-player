@@ -1,0 +1,9 @@
+{
+  "osc_remote": {
+    "enabled": false,
+    "osc_port": 12321,
+    "auto_map_cues": true,
+    "listen_ip": "0.0.0.0",
+    "custom_mappings": []
+  }
+}
