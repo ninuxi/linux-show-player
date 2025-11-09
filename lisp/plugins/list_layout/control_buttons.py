@@ -39,6 +39,9 @@ class ShowControlButtons(QWidget):
 
         self.interruptButton = self.newButton(IconTheme.get("cue-interrupt"))
         self.layout().addWidget(self.interruptButton, 0, 2)
+        # Hide the interrupt (X) button from the UI per layout preference.
+        # Keep widget available for code paths that reference it.
+        self.interruptButton.hide()
 
         # Panic button (emergency stop)
         # Keep the panic button available for code that expects it, but hide

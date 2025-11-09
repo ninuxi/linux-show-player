@@ -15,8 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Linux Show Player.  If not, see <http://www.gnu.org/licenses/>.
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QWidget, QSizePolicy, QSplitter, QVBoxLayout
+from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtWidgets import QWidget, QSizePolicy, QSplitter, QVBoxLayout, QLabel, QHBoxLayout
 
 from lisp.plugins.list_layout.list_view import CueListView
 from lisp.plugins.list_layout.playing_view import RunningCuesListWidget
@@ -109,22 +109,67 @@ class ListLayoutView(QWidget):
         # distinctly and connect it to the immediate interrupt/stop-all
         # behavior so users have one clear emergency stop.
         try:
-            self.panicButton = QIconPushButton(self)
-            self.panicButton.setFocusPolicy(Qt.NoFocus)
-            self.panicButton.setIcon(IconTheme.get("cue-stop"))
-            # Use the same icon size used by control buttons
-            self.panicButton.setIconSize(self.controlButtons.pauseButton.iconSize())
-            self.panicButton.setToolTip(
-                "Panic (Stop all immediately)"
+            # Create a compact panic widget: a small label with the OSC
+            # command and a smaller red button beneath it. This keeps the
+            # top bar tidy while showing the command to the user.
+            panic_container = QWidget(self)
+            panic_layout = QVBoxLayout(panic_container)
+            panic_layout.setContentsMargins(6, 6, 6, 6)
+            panic_layout.setSpacing(4)
+
+            cmd_label = QLabel("/lsp/stop_all", panic_container)
+            cmd_label.setAlignment(Qt.AlignCenter)
+            cmd_label.setStyleSheet("color: #ffdede; font-size: 10px;")
+            panic_layout.addWidget(cmd_label)
+
+            btn_row = QHBoxLayout()
+            btn_row.setContentsMargins(0, 0, 0, 0)
+            btn_row.setSpacing(0)
+
+            small_btn = QIconPushButton(panic_container)
+            small_btn.setFocusPolicy(Qt.NoFocus)
+            small_btn.setIcon(IconTheme.get("cue-stop"))
+            small_btn.setIconSize(QSize(20, 20))
+            small_btn.setFixedSize(40, 40)
+            small_btn.setStyleSheet(
+                "QPushButton { background-color: #d9534f; border: 1px solid #b02a26; color: white; border-radius: 4px; }"
             )
-            self.panicButton.setStyleSheet(
-                "QPushButton { background-color: #d9534f; border: 2px solid #b02a26; color: white; }"
-            )
-            # Add to top splitter to keep it on the right area
-            self.topSplitter.addWidget(self.panicButton)
-            self.panicButton.clicked.connect(lambda: Application().layout.interrupt_all())
+            btn_row.addStretch()
+            btn_row.addWidget(small_btn)
+            btn_row.addStretch()
+
+            panic_layout.addLayout(btn_row)
+
+            # Place the compact widget on the right area
+            self.topSplitter.addWidget(panic_container)
+
+            def _panic_action():
+                try:
+                    from lisp import plugins
+                    osc = None
+                    for name in ("osc_remote", "OscRemote", "Osc", "osc"):
+                        try:
+                            osc = plugins.get_plugin(name)
+                            break
+                        except Exception:
+                            osc = None
+
+                    if osc is not None and hasattr(osc, "bridge"):
+                        try:
+                            osc.bridge._handle_stop_all("/lsp/stop_all")
+                            return
+                        except Exception:
+                            pass
+                except Exception:
+                    pass
+
+                try:
+                    Application().layout.interrupt_all()
+                except Exception:
+                    pass
+
+            small_btn.clicked.connect(_panic_action)
         except Exception:
-            # Non-fatal: if Application not ready or widgets missing, ignore
             pass
 
         # CUE VIEW (center-left)
