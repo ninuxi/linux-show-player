@@ -40,6 +40,14 @@ class ShowControlButtons(QWidget):
         self.interruptButton = self.newButton(IconTheme.get("cue-interrupt"))
         self.layout().addWidget(self.interruptButton, 0, 2)
 
+        # Panic button (emergency stop)
+        # Keep the panic button available for code that expects it, but hide
+        # it by default so we can display a single centralized Panic control
+        # in the main view (to avoid visual duplication).
+        self.panicButton = self.newButton(IconTheme.get("cue-stop"))
+        self.panicButton.hide()
+        self.layout().addWidget(self.panicButton, 0, 3)
+
         # Row 1
         self.resumeButton = self.newButton(IconTheme.get("cue-start"))
         self.layout().addWidget(self.resumeButton, 1, 0)
@@ -59,6 +67,7 @@ class ShowControlButtons(QWidget):
         self.interruptButton.setToolTip(
             translate("ListLayout", "Interrupt all")
         )
+        self.panicButton.setToolTip(translate("ListLayout", "Panic (Stop all immediately)"))
         # Row 1
         self.resumeButton.setToolTip(translate("ListLayout", "Resume all"))
         self.fadeOutButton.setToolTip(translate("ListLayout", "Fade-Out all"))

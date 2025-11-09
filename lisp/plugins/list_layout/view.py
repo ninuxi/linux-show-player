@@ -21,6 +21,8 @@ from PyQt5.QtWidgets import QWidget, QSizePolicy, QSplitter, QVBoxLayout
 from lisp.plugins.list_layout.list_view import CueListView
 from lisp.plugins.list_layout.playing_view import RunningCuesListWidget
 from lisp.ui.widgets.dynamicfontsize import DynamicFontSizePushButton
+from lisp.ui.widgets.qiconpushbutton import QIconPushButton
+from lisp.ui.icons import IconTheme
 from lisp.ui.widgets.cue_control_panel import CueControlPanel
 from lisp.ui.ui_utils import css_to_dict, dict_to_css
 from lisp.cues.group_cue import GroupCue
@@ -51,6 +53,11 @@ class ListLayoutView(QWidget):
         self.goButton.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         self.goButton.setFocusPolicy(Qt.NoFocus)
         self.topSplitter.addWidget(self.goButton)
+        # Spacer to push everything except GO to the right
+        from PyQt5.QtWidgets import QWidget as _SpacerWidget
+        self.topSpacer = _SpacerWidget(self)
+        self.topSpacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        self.topSplitter.addWidget(self.topSpacer)
         
         # CREATE GROUP BUTTON (top-left-2)
         self.createGroupButton = DynamicFontSizePushButton(parent=self)
@@ -98,6 +105,27 @@ class ListLayoutView(QWidget):
             QSizePolicy.Minimum, QSizePolicy.Minimum
         )
         self.topSplitter.addWidget(self.controlButtons)
+        # Centralized Panic button (single visible control). We style it
+        # distinctly and connect it to the immediate interrupt/stop-all
+        # behavior so users have one clear emergency stop.
+        try:
+            self.panicButton = QIconPushButton(self)
+            self.panicButton.setFocusPolicy(Qt.NoFocus)
+            self.panicButton.setIcon(IconTheme.get("cue-stop"))
+            # Use the same icon size used by control buttons
+            self.panicButton.setIconSize(self.controlButtons.pauseButton.iconSize())
+            self.panicButton.setToolTip(
+                "Panic (Stop all immediately)"
+            )
+            self.panicButton.setStyleSheet(
+                "QPushButton { background-color: #d9534f; border: 2px solid #b02a26; color: white; }"
+            )
+            # Add to top splitter to keep it on the right area
+            self.topSplitter.addWidget(self.panicButton)
+            self.panicButton.clicked.connect(lambda: Application().layout.interrupt_all())
+        except Exception:
+            # Non-fatal: if Application not ready or widgets missing, ignore
+            pass
 
         # CUE VIEW (center-left)
         self.listView = CueListView(listModel, self)
@@ -161,12 +189,15 @@ class ListLayoutView(QWidget):
         self.centralSplitter.setSizes(
             (int(0.78 * self.width()), int(0.22 * self.width()))
         )
+        # Now the top splitter has 5 widgets (GO, spacer, infoPanel,
+        # controlButtons, panicButton) so provide 5 size hints.
         self.topSplitter.setSizes(
             (
-                int(0.08 * self.width()),  # GO button (reduced)
-                int(0.10 * self.width()),  # Group button (new)
-                int(0.60 * self.width()),  # Info panel (reduced)
-                int(0.22 * self.width()),  # Control buttons
+                int(0.06 * self.width()),  # GO button (reduced)
+                int(0.12 * self.width()),  # Spacer
+                int(0.56 * self.width()),  # Info panel
+                int(0.18 * self.width()),  # Control buttons
+                int(0.08 * self.width()),  # Panic button
             )
         )
 
@@ -219,13 +250,33 @@ class ListLayoutView(QWidget):
         try:
             # Use UpdateCueCommand for consistency with full settings dialog
             updates = self.controlPanel.applyCue()
-            if updates:
-                app = Application()
-                app.commands_stack.do(UpdateCueCommand(updates, cue))
-                print(f"✅ Applied changes to cue: {cue.name} using UpdateCueCommand")
-            else:
+            if not updates:
                 print("⚠️ No updates to apply")
-            
+                return
+
+            app = Application()
+            app.commands_stack.do(UpdateCueCommand(updates, cue))
+            print(f"✅ Applied changes to cue: {cue.name} using UpdateCueCommand")
+
+            # If the cue is a GroupCue and we changed the stylesheet, propagate
+            # the same stylesheet to all children so they keep the group's color.
+            if isinstance(cue, GroupCue) and "stylesheet" in updates:
+                try:
+                    child_ids = list(cue.children)
+                    child_cues = [app.cue_model.get(cid) for cid in child_ids]
+                    # Filter out any None results (missing cues)
+                    child_cues = [c for c in child_cues if c is not None]
+                    if child_cues:
+                        from lisp.command.cue import UpdateCuesCommand
+
+                        child_updates = {"stylesheet": updates["stylesheet"]}
+                        app.commands_stack.do(
+                            UpdateCuesCommand(child_updates, child_cues)
+                        )
+                        print(f"🔁 Propagated stylesheet to {len(child_cues)} children")
+                except Exception as e:
+                    print(f"❌ Failed to propagate stylesheet to children: {e}")
+
         except Exception as e:
             print(f"❌ Error applying changes: {e}")
             import traceback

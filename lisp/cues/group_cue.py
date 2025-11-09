@@ -56,6 +56,8 @@ class GroupCue(Cue):
     mode = Property(default=GroupMode.SIMULTANEOUS.value)  # Execution mode
     # Loop semantics: 0 = no loop, -1 = infinite loop (match MediaCue convention)
     loop = Property(default=0)
+    # Whether the group's children are visible/expanded in the UI
+    open = Property(default=True)
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -93,13 +95,23 @@ class GroupCue(Cue):
     def _start_simultaneous(self, fade=False):
         """Start all child cues at once"""
         print("  🔄 Starting all children simultaneously...")
+        # Track running children so we can determine when the group is finished
+        self._sim_children_remaining = 0
         for child_id in self.children:
             child_cue = self.app.cue_model.get(child_id)
             if child_cue and child_cue is not self:
+                # Connect to child's end to know when all finished
+                try:
+                    child_cue.end.connect(self._on_sim_child_ended)
+                except Exception:
+                    pass
                 action = CueAction.FadeInStart if fade else CueAction.Start
                 print(f"    ▶️ Starting child: {child_cue.name}")
                 child_cue.execute(action=action)
-        return False  # Group doesn't stay running
+                self._sim_children_remaining += 1
+
+        # If we started any children, keep the group running until they finish
+        return self._sim_children_remaining > 0
     
     def _start_sequential(self, fade=False):
         """Start child cues one after another"""
@@ -121,7 +133,8 @@ class GroupCue(Cue):
                 print(f"    ▶️ Starting child {self._current_child_index + 1}/{len(self._execution_order)}: {child_cue.name}")
                 child_cue.execute(action=action)
                 
-        return False  # Group doesn't stay running
+        # We started an asynchronous sequence; keep the group running
+        return True
     
     def _start_random(self, fade=False):
         """Shuffle children and play sequentially"""
@@ -186,8 +199,47 @@ class GroupCue(Cue):
                     # For simultaneous we currently don't auto-loop at end (no aggregate end tracking)
                     pass
             else:
+                # Sequence finished with no more loops -> mark group as ended
                 self._execution_order = []
                 self._current_child_index = 0
+                # Signal that the group itself has ended so next_action/auto-follow works
+                try:
+                    self._ended()
+                except Exception:
+                    pass
+
+    def _on_sim_child_ended(self, cue):
+        """Handler for simultaneous children end events"""
+        try:
+            cue.end.disconnect(self._on_sim_child_ended)
+        except Exception:
+            pass
+
+        try:
+            self._sim_children_remaining -= 1
+        except Exception:
+            self._sim_children_remaining = max(0, getattr(self, '_sim_children_remaining', 0) - 1)
+
+        if getattr(self, '_sim_children_remaining', 0) <= 0:
+            # All children finished
+            finished_mode = GroupMode(self.mode)
+            if self._remaining_loops == -1 or self._remaining_loops > 1:
+                if self._remaining_loops > 0:
+                    self._remaining_loops -= 1
+                print("  🔁 GroupCue loop — restarting simultaneous sequence")
+                # Restart depending on mode
+                if finished_mode == GroupMode.RANDOM:
+                    self._start_random(False)
+                elif finished_mode == GroupMode.SEQUENTIAL:
+                    self._start_sequential(False)
+                else:
+                    self._start_simultaneous(False)
+            else:
+                # No more loops -> end group
+                try:
+                    self._ended()
+                except Exception:
+                    pass
     
     def __stop__(self, fade=False):
         """Stop all child cues"""

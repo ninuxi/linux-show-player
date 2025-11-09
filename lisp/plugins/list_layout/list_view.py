@@ -299,6 +299,9 @@ class CueListView(QTreeWidget):
             self.__updateItemStyle(self.topLevelItem(cue.index))
         if property_name == "name":
             QTimer.singleShot(1, self.updateHeadersSizes)
+        # If group's open state or children changed, refresh visibility
+        if property_name in ("open", "children"):
+            QTimer.singleShot(0, self.__updateChildrenVisibility)
 
     def __cueAdded(self, cue):
         item = CueTreeWidgetItem(cue)
@@ -320,6 +323,8 @@ class CueListView(QTreeWidget):
 
         # Ensure that the focus is set
         self.setFocus()
+        # Refresh visibility in case added cue is child of a closed group
+        QTimer.singleShot(0, self.__updateChildrenVisibility)
 
     def __cueMoved(self, before, after):
         item = self.takeTopLevelItem(before)
@@ -329,10 +334,47 @@ class CueListView(QTreeWidget):
     def __cueRemoved(self, cue):
         cue.property_changed.disconnect(self.__cuePropChanged)
         self.takeTopLevelItem(cue.index)
+        QTimer.singleShot(0, self.__updateChildrenVisibility)
 
     def __modelReset(self):
         self.reset()
         self.clear()
+        QTimer.singleShot(0, self.__updateChildrenVisibility)
+
+    def __updateChildrenVisibility(self):
+        """Hide top-level items that are children of a GroupCue marked as closed.
+
+        This layout keeps cues as top-level items. A GroupCue can toggle
+        visibility of its children by setting its `open` property. When a
+        group is closed we hide all items whose id appears in that group's
+        children list.
+        """
+        try:
+            # Build set of child ids to hide (for groups where open==False)
+            hidden_ids = set()
+            app = Application()
+            for i in range(len(app.cue_model)):
+                g = app.cue_model.item(i)
+                if isinstance(g, GroupCue):
+                    try:
+                        if not getattr(g, "open", True):
+                            for cid in getattr(g, "children", ()):
+                                hidden_ids.add(cid)
+                    except Exception:
+                        continue
+
+            # Apply hiding to top-level items
+            for idx in range(self.topLevelItemCount()):
+                item = self.topLevelItem(idx)
+                if item and item.cue:
+                    # Never hide the group itself
+                    if item.cue.id in hidden_ids:
+                        item.setHidden(True)
+                    else:
+                        item.setHidden(False)
+        except Exception:
+            # Do not raise during UI refresh
+            pass
 
     def __setupItemWidgets(self, item):
         for i, column in enumerate(CueListView.COLUMNS):
@@ -385,6 +427,12 @@ class CueListView(QTreeWidget):
             
             for file in audio_files:
                 cue = factory(Application(), uri=file)
+                # Inherit group's visual stylesheet so children share the same color
+                try:
+                    cue.stylesheet = group_cue.stylesheet
+                except Exception:
+                    # If cue doesn't expose stylesheet yet, ignore silently
+                    pass
                 cue.name = os.path.splitext(os.path.basename(file))[0]
                 Application().cue_model.add(cue)
                 new_cue_ids.append(cue.id)
@@ -404,6 +452,11 @@ class CueListView(QTreeWidget):
             
             for file in video_files:
                 cue = factory(Application(), uri=file)
+                # Inherit group's visual stylesheet so children share the same color
+                try:
+                    cue.stylesheet = group_cue.stylesheet
+                except Exception:
+                    pass
                 cue.name = os.path.splitext(os.path.basename(file))[0]
                 Application().cue_model.add(cue)
                 new_cue_ids.append(cue.id)

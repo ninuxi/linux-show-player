@@ -168,6 +168,10 @@ class CueControlPanel(QWidget):
         self.loop_check = QCheckBox("Loop")
         checks_layout.addWidget(self.loop_check)
 
+        # Open/Collapse group (for GroupCue)
+        self.open_check = QCheckBox("Open")
+        checks_layout.addWidget(self.open_check)
+
         self.auto_follow_check = QCheckBox("Auto-follow")
         checks_layout.addWidget(self.auto_follow_check)
         checks_layout.addStretch()
@@ -265,6 +269,7 @@ class CueControlPanel(QWidget):
         self.post_wait_spin.valueChanged.connect(self._auto_apply)
         self.volume_slider.valueChanged.connect(self._auto_apply)
         self.loop_check.stateChanged.connect(self._auto_apply)
+        self.open_check.stateChanged.connect(self._auto_apply)
         self.auto_follow_check.stateChanged.connect(self._auto_apply)
 
         # Initially disabled
@@ -351,6 +356,12 @@ class CueControlPanel(QWidget):
             # If GroupCue (no media), use group-level loop property
             if isinstance(cue, GroupCue):
                 loop_value = getattr(cue, 'loop', 0)
+                # Open state for group
+                try:
+                    open_value = getattr(cue, 'open', True)
+                except Exception:
+                    open_value = True
+                self.open_check.setChecked(bool(open_value))
             
             self.volume_slider.setValue(volume_value)
             self.loop_check.setChecked(loop_value != 0)  # Any non-zero = loop enabled
@@ -457,6 +468,8 @@ class CueControlPanel(QWidget):
         # GroupCue loop handling (no media)
         elif isinstance(self._current_cue, GroupCue):
             updates['loop'] = -1 if self.loop_check.isChecked() else 0
+            # Persist open/collapsed state for GroupCue
+            updates['open'] = True if self.open_check.isChecked() else False
         
         return updates
     
