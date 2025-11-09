@@ -81,6 +81,12 @@ class Application(metaclass=Singleton):
         CueSettingsRegistry().add(CueGeneralSettingsPage, Cue)
         CueSettingsRegistry().add(MediaCueSettings, MediaCue)
         CueSettingsRegistry().add(Appearance)
+        
+        # Register video cue settings
+        from lisp.cues.video_cue import VideoCue
+        from lisp.ui.settings.cue_pages.video_cue import VideoCueSettings
+        # Register the settings page class for VideoCue
+        CueSettingsRegistry().add(VideoCueSettings, VideoCue)
 
         # Connect mainWindow actions
         self.__main_window.new_session.connect(self.__new_session_dialog)

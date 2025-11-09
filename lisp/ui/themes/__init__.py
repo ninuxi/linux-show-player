@@ -2,6 +2,15 @@ from os import path
 
 from lisp.core.loading import load_classes
 
+
+class Theme:
+    """Base class for themes"""
+    
+    def apply(self, qt_app):
+        """Apply the theme to the Qt application"""
+        pass
+
+
 _THEMES = {}
 
 

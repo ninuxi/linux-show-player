@@ -1,0 +1,39 @@
+{
+  "name": "@companion-app/shared",
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    "./*.js": {
+      "types": "./dist/*.d.ts",
+      "default": "./dist/*.js"
+    },
+    "./*.cjs": {
+      "types": "./dist/*.d.cts",
+      "default": "./dist/*.cjs"
+    }
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@jsep-plugin/comment": "^1.0.4",
+    "@jsep-plugin/numbers": "^1.0.2",
+    "@jsep-plugin/object": "^1.2.2",
+    "@jsep-plugin/template": "^1.0.5",
+    "jsep": "^1.4.0",
+    "jsonpath-plus": "^10.3.0",
+    "ps-tree": "^1.2.0",
+    "semver": "^7.7.3",
+    "unicode-segmenter": "^0.14.0",
+    "zod": "^4.1.12"
+  },
+  "scripts": {
+    "build": "run build:ts",
+    "build:ts": "tsc",
+    "dev": "tsc --watch"
+  },
+  "devDependencies": {
+    "@types/semver": "^7.7.1",
+    "typescript": "~5.9.3"
+  }
+}

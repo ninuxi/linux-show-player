@@ -25,22 +25,43 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QColor
 
-from lisp.ui.ui_utils import translate
+from lisp.ui.ui_utils import translate, css_to_dict, dict_to_css
+from lisp.cues.group_cue import GroupCue
 
 
 class CueControlPanel(QWidget):
-    """Compact control panel at bottom """
+    def _controller_flag_changed(self, state):
+        """Applica subito la modifica controller e aggiorna la cue"""
+        self._auto_apply()  # aggiorna il pannello
+        # Aggiorna la cue nel modello tramite UpdateCueCommand
+        try:
+            from lisp.command.cue import UpdateCueCommand
+            from lisp.application import Application
+            cue = self.getCurrentCue()
+            if cue is None:
+                return
+            updates = self.applyCue()
+            if 'controller' in updates:
+                app = Application()
+                app.commands_stack.do(UpdateCueCommand(updates, cue))
+                print(f"✅ Controller aggiornato per cue: {cue.name}")
+        except Exception as e:
+            print(f"❌ Errore aggiornamento controller: {e}")
+    """Compact control panel at bottom"""
     
     def __init__(self, parent=None):
         super().__init__(parent)
         self._current_cue = None
+        # Keep an initial snapshot of controller mappings so we can detect removals
+        self._controller_initial = {}
         self._setup_ui()
         # Larger panel so everything is visible without scrolling
         self.setMinimumHeight(280)
         self.setMaximumHeight(400)
         
-        # Make it VERY visible with background color
-        self.setStyleSheet("""
+        # Make it visible with background color
+        self.setStyleSheet(
+            """
             CueControlPanel {
                 background-color: #2a2a35;
                 border-top: 3px solid #4a5a8f;
@@ -64,7 +85,8 @@ class CueControlPanel(QWidget):
             QCheckBox { spacing: 6px; }
             QPushButton { background-color: #30354b; border: 1px solid #5965a8; border-radius: 4px; padding: 4px 8px; }
             QPushButton:hover { background-color: #3a4060; }
-        """)
+            """
+        )
         
     def _setup_ui(self):
         """Setup compact UI with improved readability"""
@@ -179,10 +201,10 @@ class CueControlPanel(QWidget):
         # MIDI
         midi_layout = QHBoxLayout()
         self.midi_check = QCheckBox("MIDI")
-        midi_layout.addWidget(self.midi_check)
         self.midi_btn = QPushButton("Config")
         self.midi_btn.setMaximumWidth(70)
         self.midi_btn.setMaximumHeight(28)
+        midi_layout.addWidget(self.midi_check)
         midi_layout.addWidget(self.midi_btn)
         midi_layout.addStretch()
         controllers_layout.addLayout(midi_layout)
@@ -190,10 +212,10 @@ class CueControlPanel(QWidget):
         # OSC
         osc_layout = QHBoxLayout()
         self.osc_check = QCheckBox("OSC")
-        osc_layout.addWidget(self.osc_check)
         self.osc_btn = QPushButton("Config")
         self.osc_btn.setMaximumWidth(70)
         self.osc_btn.setMaximumHeight(28)
+        osc_layout.addWidget(self.osc_check)
         osc_layout.addWidget(self.osc_btn)
         osc_layout.addStretch()
         controllers_layout.addLayout(osc_layout)
@@ -201,10 +223,10 @@ class CueControlPanel(QWidget):
         # Keyboard
         kbd_layout = QHBoxLayout()
         self.kbd_check = QCheckBox("Keyboard")
-        kbd_layout.addWidget(self.kbd_check)
         self.kbd_btn = QPushButton("Set Key")
         self.kbd_btn.setMaximumWidth(80)
         self.kbd_btn.setMaximumHeight(28)
+        kbd_layout.addWidget(self.kbd_check)
         kbd_layout.addWidget(self.kbd_btn)
         kbd_layout.addStretch()
         controllers_layout.addLayout(kbd_layout)
@@ -256,10 +278,29 @@ class CueControlPanel(QWidget):
         self.volume_slider.valueChanged.connect(self._auto_apply)
         self.loop_check.stateChanged.connect(self._auto_apply)
         self.auto_follow_check.stateChanged.connect(self._auto_apply)
+        self.midi_check.stateChanged.connect(self._controller_flag_changed)
+        self.osc_check.stateChanged.connect(self._controller_flag_changed)
+        self.kbd_check.stateChanged.connect(self._controller_flag_changed)
 
         # Initially disabled
         self.setEnabled(False)
     
+        """Applica subito la modifica controller e aggiorna la cue"""
+        self._auto_apply()  # aggiorna il pannello
+        # Aggiorna la cue nel modello tramite UpdateCueCommand
+        try:
+            from lisp.command.cue import UpdateCueCommand
+            from lisp.application import Application
+            cue = self.getCurrentCue()
+            if cue is None:
+                return
+            updates = self.applyCue()
+            if 'controller' in updates:
+                app = Application()
+                app.commands_stack.do(UpdateCueCommand(updates, cue))
+                print(f"✅ Controller aggiornato per cue: {cue.name}")
+        except Exception as e:
+            print(f"❌ Errore aggiornamento controller: {e}")
     def _auto_apply(self):
         """Automatically apply changes when controls are modified"""
         # Don't apply if signals are blocked (loading cue data)
@@ -294,6 +335,7 @@ class CueControlPanel(QWidget):
     def setCue(self, cue):
         """Load cue data into panel"""
         self._current_cue = cue
+        self._controller_initial = {}
         
         if cue is None:
             self.setEnabled(False)
@@ -315,7 +357,7 @@ class CueControlPanel(QWidget):
             
             print(f"   Loaded timing: FadeIn={cue.fadein_duration}ms, FadeOut={cue.fadeout_duration}ms")
             
-            # Playback - get volume from media element if available
+            # Playback - get volume/loop
             volume_value = 100  # default
             loop_value = 0  # default
             
@@ -337,6 +379,10 @@ class CueControlPanel(QWidget):
                 print(f"   Loop value from media: {loop_value}")
             else:
                 print(f"   ⚠️ No media attribute or media is None")
+
+            # If GroupCue (no media), use group-level loop property
+            if isinstance(cue, GroupCue):
+                loop_value = getattr(cue, 'loop', 0)
             
             self.volume_slider.setValue(volume_value)
             self.loop_check.setChecked(loop_value != 0)  # Any non-zero = loop enabled
@@ -356,12 +402,13 @@ class CueControlPanel(QWidget):
             self.osc_check.setChecked(False)
             self.kbd_check.setChecked(False)
             
-            # Color - get from cue stylesheet
-            cue_color = cue.stylesheet if hasattr(cue, 'stylesheet') else '#6496c8'
-            if isinstance(cue_color, str) and cue_color:
-                self._cue_color = QColor(cue_color)
-            else:
-                self._cue_color = QColor(100, 150, 200)
+            # Color - get from cue stylesheet (CSS -> dict)
+            try:
+                css = css_to_dict(getattr(cue, 'stylesheet', '') or '')
+                bg = css.get('background') or '#6496c8'
+            except Exception:
+                bg = '#6496c8'
+            self._cue_color = QColor(bg)
             self.color_btn.setStyleSheet(f"QPushButton {{ background-color: {self._cue_color.name()}; border: 1px solid #333; }}")
             
         finally:
@@ -372,68 +419,79 @@ class CueControlPanel(QWidget):
         """Get changes to apply to cue (returns dict for UpdateCueCommand)"""
         if self._current_cue is None:
             return {}
-        
-        # Return dictionary of updates to be applied by UpdateCueCommand
+
         updates = {}
-        
+
         # Timing (convert seconds to milliseconds)
         updates['fadein_duration'] = int(self.fade_in_spin.value() * 1000)
         updates['fadeout_duration'] = int(self.fade_out_spin.value() * 1000)
         updates['pre_wait'] = int(self.pre_wait_spin.value() * 1000)
         updates['post_wait'] = int(self.post_wait_spin.value() * 1000)
-        
+
         # Auto-follow - set next_action
         from lisp.cues.cue import CueNextAction
         if self.auto_follow_check.isChecked():
             updates['next_action'] = CueNextAction.TriggerAfterEnd.value
         else:
             updates['next_action'] = CueNextAction.DoNothing.value
-        
-        # Color - update stylesheet
-        updates['stylesheet'] = self._cue_color.name()
-        
-        # Media properties (volume, loop) - need special handling
+
+        # Color - update stylesheet (dict -> CSS string)
+        try:
+            css = css_to_dict(getattr(self._current_cue, 'stylesheet', '') or '')
+        except Exception:
+            css = {}
+        css['background'] = self._cue_color.name()
+        if 'color' not in css:
+            css['color'] = self._auto_contrast_text(self._cue_color)
+        updates['stylesheet'] = dict_to_css(css)
+
+        # Media properties (volume, loop)
         if hasattr(self._current_cue, 'media') and self._current_cue.media is not None:
-            # Get current media element properties
             media_updates = {}
-            
-            # Volume element updates
             volume_elem = self._current_cue.media.element('Volume')
             if volume_elem is not None:
-                # Convert from 0-200% to 0.0-10.0 range
                 new_volume = self.volume_slider.value() / 100.0
                 media_updates['Volume'] = {
                     'volume': new_volume,
                     'normal_volume': new_volume
                 }
-            
-            # Loop setting
             if self.loop_check.isChecked():
-                media_updates['loop'] = -1  # Infinite loop
+                media_updates['loop'] = -1
             else:
-                media_updates['loop'] = 0  # No loop
-            
-            # Store media updates in the media property
+                media_updates['loop'] = 0
             if media_updates:
-                # Get current media properties and update them
                 media_props = self._current_cue.media.properties()
-                
-                # Update loop directly
                 if 'loop' in media_updates:
                     media_props['loop'] = media_updates['loop']
-                
-                # Update volume element if present
                 if 'Volume' in media_updates:
                     if 'elements' not in media_props:
                         media_props['elements'] = {}
                     if 'Volume' not in media_props['elements']:
                         media_props['elements']['Volume'] = {}
                     media_props['elements']['Volume'].update(media_updates['Volume'])
-                
                 updates['media'] = media_props
-        
+        elif isinstance(self._current_cue, GroupCue):
+            updates['loop'] = -1 if self.loop_check.isChecked() else 0
+
         return updates
     
     def getCurrentCue(self):
         """Get current cue"""
         return self._current_cue
+
+    # --- helpers ---
+    def _auto_contrast_text(self, qcolor: QColor) -> str:
+        """Return '#000000' or '#ffffff' based on perceived luminance.
+
+        Uses the WCAG relative luminance approximation.
+        """
+        r, g, b, _ = qcolor.getRgb()
+        # Normalize 0..1
+        r /= 255.0
+        g /= 255.0
+        b /= 255.0
+        # Gamma expansion
+        def lin(c):
+            return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+        L = 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b)
+        return '#000000' if L > 0.6 else '#ffffff'

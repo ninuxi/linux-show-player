@@ -73,13 +73,28 @@ class GstBackend(Plugin, BaseBackend):
 
         # Register GstMediaCue factory
         app.cue_factory.register_factory("GstMediaCue", GstCueFactory(tuple()))
-        # Add Menu entry
+        
+        # Register GstVideoCue factory
+        from lisp.plugins.gst_backend.gst_video_cue import UriVideoCueFactory
+        app.cue_factory.register_factory("GstVideoCue", UriVideoCueFactory(tuple()))
+
+        # Add Menu entries
         self.app.window.registerCueMenu(
             translate("GstBackend", "Audio cue (from file)"),
             self._add_uri_audio_cue,
             category=QT_TRANSLATE_NOOP("CueCategory", "Media cues"),
             shortcut="CTRL+M",
         )
+        
+        # Do not register a separate video menu here to avoid duplicates.
+        # VLC backend provides a unified "Import video" action that will be used.
+        # If VLC is not available, consider re-enabling this entry.
+        # self.app.window.registerCueMenu(
+        #     translate("GstBackend", "Video cue (from file)"),
+        #     self._add_uri_video_cue,
+        #     category=QT_TRANSLATE_NOOP("CueCategory", "Media cues"),
+        #     shortcut="CTRL+V",
+        # )
 
         # Load elements and their settings-widgets
         elements.load()
@@ -140,6 +155,31 @@ class GstBackend(Plugin, BaseBackend):
 
             self.add_cue_from_files(files)
 
+    def _add_uri_video_cue(self):
+        """Add video MediaCue(s) form user-selected files"""
+        # Get the last visited directory, or use the session-file location
+        directory = GstBackend.Config.get("mediaLookupDir", "")
+        if not os.path.exists(directory):
+            directory = self.app.session.dir()
+
+        # Filter for video files only
+        video_extensions = {"video": self.supported_extensions()["video"]}
+        
+        # Open a filechooser, at the last visited directory
+        files, _ = QFileDialog.getOpenFileNames(
+            self.app.window,
+            translate("GstBackend", "Select video files"),
+            directory,
+            qfile_filters(video_extensions, anyfile=True),
+        )
+
+        if files:
+            # Updated the last visited directory
+            GstBackend.Config["mediaLookupDir"] = os.path.dirname(files[0])
+            GstBackend.Config.write()
+
+            self.add_video_cue_from_files(files)
+
     def add_cue_from_urls(self, urls):
         extensions = self.supported_extensions()
         extensions = extensions["audio"] + extensions["video"]
@@ -165,6 +205,46 @@ class GstBackend(Plugin, BaseBackend):
             cue = factory(self.app, uri=file)
             # Use the filename without extension as cue name
             cue.name = os.path.splitext(os.path.basename(file))[0]
+
+            cues.append(cue)
+
+        # Insert the cue into the layout
+        self.app.commands_stack.do(
+            LayoutAutoInsertCuesCommand(self.app.session.layout, *cues)
+        )
+
+        QApplication.restoreOverrideCursor()
+
+    def add_video_cue_from_files(self, files):
+        """Create video cues from selected files"""
+        QApplication.setOverrideCursor(QCursor(Qt.WaitCursor))
+
+        # Create video cues using the same pattern as audio cues
+        # But we force the use of AutoVideoSink for video output
+        pipeline_with_video = GstBackend.Config["pipeline"].copy()
+        
+        print(f"Original pipeline: {pipeline_with_video}")
+        
+        # Replace AutoSink with AutoVideoSink for video support
+        if "AutoSink" in pipeline_with_video:
+            pipeline_with_video = [elem if elem != "AutoSink" else "AutoVideoSink" 
+                                 for elem in pipeline_with_video]
+        elif "AutoVideoSink" not in pipeline_with_video:
+            # Add AutoVideoSink if no sink is present
+            pipeline_with_video.append("AutoVideoSink")
+            
+        print(f"Video pipeline: {pipeline_with_video}")
+            
+        from lisp.plugins.gst_backend.gst_video_cue import UriVideoCueFactory
+        factory = UriVideoCueFactory(pipeline_with_video)
+
+        cues = []
+        for file in files:
+            cue = factory(self.app, uri=file)
+            # Use the filename without extension as cue name
+            cue.name = os.path.splitext(os.path.basename(file))[0]
+            
+            print(f"Created video cue with pipeline: {cue.media.pipe}")
 
             cues.append(cue)
 

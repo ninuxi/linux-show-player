@@ -1,0 +1,193 @@
+@use 'variables' as *;
+@use '@coreui/coreui/scss/coreui'; // not strictly necessary, but it allows us to clarify the origin of mixins
+
+.float_right {
+	float: right;
+}
+
+.float_inline {
+	display: inline;
+}
+
+.float_right,
+.float_inline {
+	cursor: pointer;
+	cursor: hand;
+
+	svg {
+		margin-right: 4px;
+	}
+
+	> * {
+		display: inline-block;
+
+		color: inherit;
+		&:hover {
+			color: inherit;
+		}
+	}
+}
+
+.connectionlist-selected {
+	background-color: rgba(200, 200, 200, 0.35);
+
+	&:hover {
+		background-color: rgba(200, 200, 200, 0.3) !important;
+	}
+}
+
+.connection-status-ok {
+	background-color: #cfc;
+}
+
+.connection-status-warn {
+	background-color: #fea;
+}
+
+.connection-status-error {
+	background-color: #fcc;
+}
+
+#connection_add_search_results {
+	margin-top: 10px;
+}
+
+#connection_add_search_results div {
+	margin-bottom: 5px;
+}
+
+.edit-connection {
+	margin-bottom: 1em;
+
+	& > div {
+		// column
+		margin-bottom: 10px;
+	}
+
+	label {
+		justify-content: left;
+		font-weight: bold;
+		font-size: 1em;
+		margin-bottom: 0.15rem;
+	}
+}
+
+.connection-form-buttons {
+	position: sticky;
+	bottom: 0;
+	flex-shrink: 0;
+	padding-top: 1rem;
+	margin-top: auto;
+	background-color: white;
+	padding-bottom: 1.5rem;
+}
+
+.variables-panel {
+	margin-right: -0.5rem;
+
+	overflow: hidden;
+	height: 100%;
+	position: relative;
+
+	display: flex;
+	flex-direction: column;
+
+	.variables-table-filter {
+		margin-top: 1rem;
+	}
+
+	.variables-table-scroller {
+		overflow-y: auto;
+		overflow-x: hidden;
+	}
+}
+
+.variables-table {
+	word-break: break-all;
+	table-layout: fixed;
+	// flex-grow: 1;
+
+	th {
+		position: sticky;
+		top: 0;
+	}
+
+	.variable-dragging {
+		opacity: 0.5;
+	}
+
+	.variable-description {
+		word-break: normal;
+		padding: $variable-padding;
+	}
+
+	.editor-grid {
+		.cell-header {
+			grid-column: 1/4;
+			font-weight: bold;
+			display: grid;
+			grid-template-columns: 1fr 1.25fr 0.2fr;
+
+			.cell-header-item {
+				&.span-2 {
+					grid-column: 1/3;
+				}
+			}
+		}
+
+		.cell-fields {
+			display: grid;
+			grid-template-columns: 0.25fr 1fr;
+
+			@include coreui.media-breakpoint-up(sm) {
+				.align-right {
+					text-align: right;
+					align-self: center;
+				}
+			}
+			@include coreui.media-breakpoint-down(sm) {
+				.align-right {
+					margin-bottom: 0;
+				}
+			}
+		}
+	}
+}
+
+.variables-table-filter {
+	margin: 0 0 1rem 0;
+}
+
+.import-module {
+	margin-bottom: 0.5rem;
+}
+
+// Connection groups styling
+.connection-group-actions {
+	margin-bottom: 1rem;
+}
+
+.add-connection-intro-section {
+	.intro-grid {
+		display: grid;
+		grid-template-columns: 1fr auto;
+		gap: 0 0.5rem;
+
+		@media (max-width: 768px) {
+			grid-template-columns: 1fr;
+			gap: 0.75rem;
+
+			.intro-filter {
+				justify-self: auto;
+			}
+		}
+	}
+
+	.intro-text {
+		grid-column: 1 / 3;
+	}
+
+	.intro-filter {
+		justify-self: end;
+	}
+}

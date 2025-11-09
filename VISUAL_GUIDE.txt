@@ -1,0 +1,166 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║            LINUX SHOW PLAYER - MODERN QLAB-STYLE EDITION                  ║
+║                    PANNELLO CONTROLLI IMPLEMENTATO!                        ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│ [🎵 File] [Edit] [Cues] [View] [Tools] [Help]                    [⚙️]   │
+├────────┬─────────────────────────────────────────────────────────────────┤
+│        │                                                                  │
+│  [GO]  │              ℹ️  INFO PANEL                                     │
+│        │         Selected: Intro Music                                   │
+│        │         Duration: 00:15.240                                     │
+├────────┴─────────────────────────────────────────────────────────────────┤
+│                                                                            │
+│  CUE LIST                                                                  │
+│  ┌──────────────────────────────────────────────────────────────────┐   │
+│  │ #  │ NAME              │ PRE-WAIT │ ACTION │ POST-WAIT │ STATUS  │   │
+│  ├────┼───────────────────┼──────────┼────────┼───────────┼─────────┤   │
+│  │ 1  │ 🔵 Intro Music    │  0.0s    │  ▶️    │   0.5s    │  ⏸️     │   │
+│  │ 2  │ 🟢 Announcement   │  1.0s    │  ▶️    │   0.0s    │  ⏹️     │   │
+│  │ 3  │ 🔵 Background     │  0.0s    │  ▶️    │   0.0s    │  ⏹️     │   │
+│  │ 4  │ 🔴 Sound Effect   │  0.0s    │  ▶️    │   2.0s    │  ⏹️     │   │
+│  └──────────────────────────────────────────────────────────────────┘   │
+│                                                                            │
+├────────────────────────────────────────────────────────────────────────────┤
+│                        🎵 WAVEFORM PREVIEW                                │
+│  ┌──────────────────────────────────────────────────────────────────┐   │
+│  │ ▁▂▃▄▅▆▇█████████████▇▆▅▄▃▂▁ ▁▂▃▄▅▆▇████████▇▆▅▄▃▂▁ ▁▂▃▄▅         │   │
+│  │ │         │                                    │         │        │   │
+│  │ IN      00:02.500                            00:12.800   OUT     │   │
+│  └──────────────────────────────────────────────────────────────────┘   │
+├────────────────────────────────────────────────────────────────────────────┤
+│                         QUICK CONTROLS                                     │
+│  ════════════════════════════════════════════════════════════════════    │
+│                                                                            │
+│  ┌─────────────┬──────────────┬───────────────┬──────────────────┐      │
+│  │   TIMING    │   PLAYBACK   │  CONTROLLERS  │     ACTIONS      │      │
+│  ├─────────────┼──────────────┼───────────────┼──────────────────┤      │
+│  │             │              │               │                  │      │
+│  │ Fade In:    │ Vol: ▓▓▓▓░ 80%│ ☑ MIDI [Cfg]│ Color: [🔵]     │      │
+│  │  [2.0] s    │              │               │                  │      │
+│  │             │ ☑ Loop       │ ☐ OSC  [Cfg] │ ┌────────────┐   │      │
+│  │ Fade Out:   │              │               │ │ ✓  APPLY   │   │      │
+│  │  [3.0] s    │ ☑ Auto-follow│ ☐ Key  [Set] │ │  CHANGES   │   │      │
+│  │             │              │               │ └────────────┘   │      │
+│  │ Pre-Wait:   │              │               │                  │      │
+│  │  [0.5] s    │              │               │ ⚙ Full Settings │      │
+│  │             │              │               │                  │      │
+│  │ Post-Wait:  │              │               │                  │      │
+│  │  [1.0] s    │              │               │                  │      │
+│  │             │              │               │                  │      │
+│  └─────────────┴──────────────┴───────────────┴──────────────────┘      │
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════════════════
+
+📊 DETTAGLIO CONTROLLI:
+
+╔═══════════════╦════════════════════════════════════════════════════════╗
+║   TIMING      ║ • Fade In/Out: 0-60 secondi (step 0.5s)              ║
+║               ║ • Pre/Post Wait: 0-999 secondi                        ║
+║               ║ • Controlli precisi per fade perfetti                 ║
+╠═══════════════╬════════════════════════════════════════════════════════╣
+║   PLAYBACK    ║ • Volume: 0-200% con slider visivo                   ║
+║               ║ • Loop: Ripetizione infinita                          ║
+║               ║ • Auto-follow: Vai automaticamente a prossima cue     ║
+╠═══════════════╬════════════════════════════════════════════════════════╣
+║  CONTROLLERS  ║ • MIDI: Enable + Config button                        ║
+║               ║ • OSC: Enable + Config button                         ║
+║               ║ • Keyboard: Enable + Set Key button                   ║
+╠═══════════════╬════════════════════════════════════════════════════════╣
+║   ACTIONS     ║ • Color Picker: Colora la cue                        ║
+║               ║ • Apply: Salva modifiche immediate                    ║
+║               ║ • Full Settings: Dialog completo                      ║
+╚═══════════════╩════════════════════════════════════════════════════════╝
+
+═══════════════════════════════════════════════════════════════════════════
+
+🎯 WORKFLOW VELOCE:
+
+1. SELECT CUE     →  Click sulla cue nella lista
+                     Pannello si attiva automaticamente! 💡
+
+2. EDIT QUICK     →  Modifica fade, volume, loop, colore
+                     Tutto nel pannello compatto in basso
+
+3. APPLY          →  Click "✓ APPLY CHANGES" (verde)
+                     Modifiche salvate immediatamente!
+
+4. PLAY           →  Press GO o SPACE
+                     Audio parte con le tue impostazioni! 🎵
+
+═══════════════════════════════════════════════════════════════════════════
+
+💡 FEATURES CHIAVE:
+
+✅ PANNELLO SEMPRE VISIBILE IN BASSO
+✅ MODIFICHE IN 2 CLICK (non più 5+)
+✅ COLOR CODING PER ORGANIZZAZIONE
+✅ FADE IN/OUT PROFESSIONALE
+✅ LOOP E AUTO-FOLLOW INTEGRATI
+✅ CONTROLLI MIDI/OSC/KEYBOARD
+✅ NO VIDEO = PIÙ VELOCE E STABILE
+
+═══════════════════════════════════════════════════════════════════════════
+
+📖 ESEMPI D'USO:
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ ESEMPIO 1: Musica di Sottofondo con Loop                           │
+├─────────────────────────────────────────────────────────────────────┤
+│ Cue: "background.mp3"                                               │
+│ Pannello Quick Controls:                                            │
+│   • Fade In: 3.0s        → Entra dolcemente                        │
+│   • Fade Out: 3.0s       → Esce gradualmente                       │
+│   • Volume: 60%          → Non troppo forte                        │
+│   • Loop: ☑              → Ripete all'infinito                     │
+│   • Color: [🔵] BLU     → Visivamente riconoscibile               │
+│ Click "✓ Apply" → GO → Musica loopa perfettamente! 🎵             │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ ESEMPIO 2: Sequenza Automatica di Effetti                          │
+├─────────────────────────────────────────────────────────────────────┤
+│ Cue 1: "thunder.wav"                                                │
+│   • Volume: 100%                                                    │
+│   • Post-wait: 2.0s      → Pausa dopo tuono                        │
+│   • Auto-follow: ☑       → Vai automaticamente a rain              │
+│   • Color: [🔴] ROSSO   → Effetto drammatico                       │
+│                                                                      │
+│ Cue 2: "rain.wav"                                                   │
+│   • Fade In: 2.0s        → Pioggia entra dolcemente                │
+│   • Volume: 80%                                                     │
+│   • Loop: ☑              → Pioggia continua                        │
+│   • Color: [🔵] BLU     → Ambiente naturale                        │
+│                                                                      │
+│ Press GO UNA VOLTA → Tuono → pausa → pioggia loop! ⛈️              │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ ESEMPIO 3: Controllo MIDI dal Pad                                  │
+├─────────────────────────────────────────────────────────────────────┤
+│ Cue: "alarm.wav"                                                    │
+│ Pannello Quick Controls:                                            │
+│   • Volume: 100%                                                    │
+│   • MIDI: ☑ → Click [Config]                                       │
+│   • Assegna: Note C3                                                │
+│   • Color: [🟡] GIALLO  → Allarme/Attenzione                      │
+│                                                                      │
+│ Ora premi C3 sul pad MIDI → Allarme parte istantaneamente! 🎹      │
+└─────────────────────────────────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════════════════
+
+🚀 PRONTO ALL'USO!
+
+Avvia con:
+  ./start_modern.sh
+
+O manualmente:
+  PYTHONPATH=/home/nto/linux-show-player-master python3 lisp/main.py
+
+IL PANNELLO È IN FONDO - IMPOSSIBILE NON VEDERLO! 👀
+
+═══════════════════════════════════════════════════════════════════════════

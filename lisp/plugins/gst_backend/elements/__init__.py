@@ -33,6 +33,20 @@ def load():
             __OUTPUTS[element_class.__name__] = element_class
         elif element_class.ElementType == ElementType.Plugin:
             __PLUGINS[element_class.__name__] = element_class
+    
+    # Load video elements
+    from .video_elements import register_video_elements
+    register_video_elements()
+
+
+def register_element(element_class):
+    """Register a new element class"""
+    if element_class.ElementType == ElementType.Input:
+        __INPUTS[element_class.__name__] = element_class
+    elif element_class.ElementType == ElementType.Output:
+        __OUTPUTS[element_class.__name__] = element_class
+    elif element_class.ElementType == ElementType.Plugin:
+        __PLUGINS[element_class.__name__] = element_class
 
 
 # Getter functions

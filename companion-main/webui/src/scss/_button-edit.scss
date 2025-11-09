@@ -1,0 +1,211 @@
+@use 'variables' as *;
+
+.edit-button-panel {
+	margin-right: -0.5rem;
+	h4 {
+		margin-top: 1rem;
+	}
+
+	svg {
+		font-size: 1rem;
+	}
+}
+
+.form-label .feature-icons {
+	background-color: #ddd;
+	border-radius: 100px; // as much as possible
+
+	margin-left: 3px;
+
+	padding-left: 3px;
+	padding-right: 3px;
+
+	svg {
+		margin-left: 2px;
+		margin-right: 2px;
+
+		font-size: 0.8rem;
+	}
+}
+
+.flex-form {
+	& > div:not(.btn-group) {
+		// column
+		margin-bottom: 10px;
+	}
+
+	label {
+		justify-content: left;
+		font-weight: bold;
+		font-size: 0.95em;
+		margin-bottom: 0.15rem;
+
+		svg {
+			margin-left: 5px;
+		}
+	}
+
+	.png-browse {
+		display: block;
+		white-space: nowrap;
+	}
+}
+
+.flex-form-row {
+	margin: 0;
+}
+
+table.entity-table tr:not(:first-child) td,
+table.variables-table tr:not(:first-child) td {
+	border-top: 10px solid #f0f0f0;
+}
+table.entity-table td,
+table.variables-table td {
+	border-bottom: 10px solid #f0f0f0;
+}
+
+table.entity-table,
+table.variables-table {
+	.entitylist-dragging {
+		opacity: 0.5;
+	}
+
+	.entitylist-dropzone {
+		p {
+			border: 2px dashed #bbb;
+			border-radius: 5px;
+			text-align: center;
+			margin: 0;
+			padding: 0.75rem;
+		}
+	}
+
+	.editor-grid-events {
+		margin-right: -0.75rem;
+	}
+	.editor-grid-header {
+		display: flex;
+		flex-direction: row;
+		margin-right: -0.75rem;
+
+		.cell-name {
+			flex-grow: 1;
+
+			font-weight: bold;
+			align-self: center;
+
+			input {
+				font-weight: bold;
+				margin-bottom: 5px;
+			}
+		}
+		.cell-controls {
+			text-align: right;
+			align-self: center;
+		}
+	}
+	.editor-grid {
+		display: flex;
+		flex-direction: column;
+
+		.entity-cells-wrapper {
+			display: flex;
+			flex-direction: row;
+			column-gap: 0.5rem;
+		}
+
+		.cell-name {
+			font-weight: bold;
+		}
+
+		.cell-description {
+			display: flex;
+
+			margin-top: 0.5rem;
+			margin-bottom: 0.75rem;
+
+			.name {
+				font-weight: bold;
+				margin-bottom: 0;
+			}
+
+			.description {
+				color: #666;
+				line-height: 1.25em;
+				font-size: 12px;
+				// margin-bottom: 10px;
+			}
+		}
+
+		.cell-button-preview {
+			align-content: center;
+
+			.button-control {
+				padding: 0;
+			}
+		}
+
+		.cell-children {
+			h4 {
+				margin-top: 0 !important;
+			}
+
+			> form:not(:first-child) {
+				margin-top: 0.5rem;
+			}
+		}
+
+		.input-group {
+			flex-wrap: nowrap;
+		}
+	}
+
+	// Give a border the bottom of the table. based on the table.td rule from coreui
+	tbody {
+		border-bottom: $table-border-width solid;
+
+		// nocommit
+		// @include themes($table-theme-map, $create: parent) {
+		// 	border-bottom-color: themes-get-value('table-border-color');
+		// }
+	}
+}
+
+.add-dropdown-wrapper {
+	display: grid;
+	grid-auto-flow: column;
+	grid-template-columns: 1fr auto;
+}
+
+.add-browse-card {
+	.card-header {
+		cursor: pointer;
+		font-weight: bold;
+		// background-color: #ccc;
+
+		&:hover {
+			text-decoration: underline;
+		}
+	}
+
+	.card-body {
+		padding: 0;
+	}
+
+	.table {
+		margin-bottom: 0;
+
+		td {
+			vertical-align: middle;
+		}
+
+		.item-label {
+			font-weight: bold;
+		}
+	}
+
+	p.no-entries {
+		padding: 0.75rem;
+		margin: 0;
+	}
+}

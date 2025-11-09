@@ -1,0 +1,13 @@
+.dockerignore
+node_modules
+*/node_modules
+module-local-dev
+*.log
+electron-output
+webui/build
+.github
+Dockerfile
+.prettier*
+dist
+*/dist
+.cache

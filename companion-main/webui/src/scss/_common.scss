@@ -1,0 +1,351 @@
+@use 'sass:color';
+@use 'variables' as *;
+
+h4 {
+	font-weight: bold;
+}
+
+.action-buttons {
+	text-align: center;
+
+	// make compact
+	width: 1px;
+
+	.btn {
+		text-transform: uppercase;
+
+		padding: 4px;
+
+		&:disabled {
+			opacity: 0.2;
+		}
+	}
+
+	.btn-primary.disabled {
+		opacity: 0.5;
+	}
+}
+
+.alert {
+	&.margin-top {
+		margin-top: 1rem;
+	}
+}
+
+.right {
+	float: right;
+}
+
+h4,
+h5,
+legend {
+	.btn-group {
+		float: right;
+	}
+	.btn {
+		float: right;
+	}
+}
+
+.btn-group {
+	overflow: hidden;
+	&.margin-bottom {
+		margin-bottom: 1rem;
+	}
+
+	.form-switch {
+		margin-top: 0.2rem;
+	}
+}
+
+h5 {
+	font-weight: bold;
+}
+
+.table-tight {
+	width: 100%;
+}
+
+.table-tight td,
+th {
+	padding: 5px 10px;
+	border-bottom: 1px solid #ddd;
+}
+
+.table-responsive-sm {
+	border: 1px solid #ddd;
+	border-collapse: collapse;
+	box-shadow: 0px 2px 21px -10px rgba(0, 0, 0, 0.2);
+
+	th {
+		// border-radius: 10%;
+		background-color: #f0f0f0;
+		padding-top: 6px;
+		padding-bottom: 6px;
+
+		&.fit {
+			width: 1px;
+		}
+	}
+
+	td {
+		vertical-align: middle;
+	}
+}
+
+.table-header-buttons {
+	float: right;
+	margin: 0;
+
+	button {
+		padding: 1px 5px;
+		opacity: 0.4;
+
+		&.active {
+			opacity: 1;
+		}
+
+		&.btn-secondary {
+			background-color: white;
+			color: black;
+		}
+	}
+}
+
+code {
+	font-family: 'Fira Code', monospace;
+	font-size: 1.05em;
+}
+
+@supports (font-variation-settings: normal) {
+	code {
+		font-family: 'Fira Code VF', monospace;
+	}
+}
+
+.widget-clickable,
+.hand {
+	cursor: pointer;
+}
+
+.btn-danger {
+	background-color: $primary;
+}
+
+.btn-danger:hover {
+	background-color: color.adjust($primary, $lightness: -5%, $space: hsl);
+	color: #eee;
+	animation: blinker 0.3s linear infinite;
+}
+
+.btn-danger:disabled {
+	color: rgba(255, 255, 255, 0.8);
+}
+
+.btn-success:disabled {
+	color: rgba(255, 255, 255, 0.9);
+}
+
+.btn-info:disabled {
+	color: rgba(255, 255, 255, 0.9);
+}
+
+@keyframes blinker {
+	50% {
+		opacity: 0.8;
+	}
+}
+
+.c-app {
+	color: #222;
+}
+
+.form-control[type='text']:read-only {
+	background-color: #eeeeee;
+}
+.table {
+	color: #111;
+}
+
+.modal {
+	max-height: 94vh;
+	margin-top: 6vh;
+
+	.modal-header {
+		h1,
+		h2,
+		h3,
+		h4,
+		h5 {
+			margin: 0;
+		}
+	}
+}
+
+.btn-secondary {
+	background-color: color.adjust($secondary, $lightness: 15%, $space: hsl);
+}
+.btn-danger,
+.btn-success,
+.btn-info {
+	color: #fff;
+}
+
+.btn-success:hover {
+	color: #fff;
+}
+
+.btn.disabled.with-tooltip {
+	cursor: inherit;
+	pointer-events: inherit;
+}
+
+.btn-white.disabled {
+	opacity: 0.4;
+	border-color: transparent;
+}
+
+.text-right {
+	text-align: right;
+}
+
+.currentlyNone {
+	color: #777;
+	text-align: center;
+	padding: 30px !important;
+}
+
+.form-check-label,
+.form-label {
+	font-weight: bold;
+	align-content: center;
+}
+
+.flex {
+	display: flex;
+}
+
+.w-full {
+	width: 100%;
+}
+.gap-1rem {
+	gap: 1rem;
+}
+.gap-2rem {
+	gap: 2rem;
+}
+.column-gap-1rem {
+	column-gap: 1rem;
+}
+.flex-wrap {
+	flex-wrap: wrap;
+}
+
+.c-switch-input {
+	display: none;
+}
+
+.displayNone {
+	display: none;
+}
+
+.option-field {
+	margin-bottom: 0.75rem;
+}
+
+.noBorder td {
+	border: none;
+}
+
+.btn-undefined:disabled {
+	border-color: transparent;
+}
+
+.nav-item {
+	&.hidden {
+		display: none;
+	}
+}
+
+.form-control,
+.form-control:focus,
+.form-select {
+	background-color: #fff;
+}
+
+.float-right {
+	float: right;
+}
+
+.form-check-label {
+	margin-left: 0.25rem;
+}
+
+table .td-reorder {
+	cursor: ns-resize;
+	background-color: #f7f7f7;
+
+	padding-right: 10px;
+	padding-left: 10px;
+	vertical-align: middle;
+
+	// as narrow as possible
+	width: 0;
+
+	svg {
+		color: #333;
+	}
+}
+
+.list-group {
+	--cui-list-group-bg: #f7f7f7;
+}
+
+.form-range {
+	align-self: center;
+}
+
+.select-control {
+	// avoid blowout
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+}
+
+.searchbox {
+	margin-bottom: 0.5rem;
+}
+
+svg.button-size {
+	margin: $btn-padding-y $btn-padding-x;
+}
+svg.pad-left {
+	margin-left: 0.5rem;
+}
+
+.notification-count {
+	background-color: $primary;
+	color: #fff;
+	font-weight: bold;
+
+	border-radius: 50%;
+	// padding: 0.1rem;
+	font-size: 0.7rem;
+	vertical-align: top;
+	text-align: center;
+
+	// margin-right: -0.5rem;
+	min-width: calc(var(--cui-body-line-height) * 1em);
+	display: inline-block;
+}
+
+.grow {
+	flex-grow: 1;
+}
+
+.h-fit-content {
+	height: fit-content;
+}
+
+.text-decoration-none {
+	--cui-link-decoration: none;
+}

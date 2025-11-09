@@ -37,19 +37,42 @@ class Network(Plugin):
         route_all(self.app, self.api)
 
         # WSGI Server
-        self.server = APIServerThread(
-            Network.Config["host"], Network.Config["port"], self.api
-        )
-        self.server.start()
+        self.server = None
+        try:
+            self.server = APIServerThread(
+                Network.Config["host"], Network.Config["port"], self.api
+            )
+            self.server.start()
+        except Exception:
+            # If binding fails or any other error, keep plugin loaded but without network server
+            self.server = None
 
         # Announcer
-        self.announcer = Announcer(
-            Network.Config["host"],
-            Network.Config["discovery.port"],
-            Network.Config["discovery.magic"],
-        )
-        self.announcer.start()
+        self.announcer = None
+        try:
+            self.announcer = Announcer(
+                Network.Config["host"],
+                Network.Config["discovery.port"],
+                Network.Config["discovery.magic"],
+            )
+            self.announcer.start()
+        except Exception:
+            self.announcer = None
 
-    def terminate(self):
-        self.announcer.stop()
-        self.server.stop()
+    def finalize(self=None):
+        # Allow being called on class or instance safely
+        try:
+            if self is not None and getattr(self, 'announcer', None) is not None:
+                self.announcer.stop()
+        except Exception:
+            pass
+        try:
+            if self is not None and getattr(self, 'server', None) is not None:
+                self.server.stop()
+        except Exception:
+            pass
+        try:
+            if self is not None:
+                super(Network, self).finalize()
+        except Exception:
+            pass
